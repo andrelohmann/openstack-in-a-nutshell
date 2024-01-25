@@ -1,0 +1,44 @@
+---
+
+- name: Install keystone packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - keystone
+
+- name: Configure keystone connection
+  ansible.builtin.lineinfile:
+    path: /etc/keystone/keystone.conf
+    regexp: '^connection = sqlite'
+    insertafter: '^[database]'
+    line: connection = mysql+pymysql://keystone:qwerty@localhost/keystone
+
+- name: Configure keystone rabbitmq
+  ansible.builtin.lineinfile:
+    path: /etc/keystone/keystone.conf
+    regexp: '^transport_url = rabbit://'
+    insertafter: '^#transport_url = rabbit://'
+    line: transport_url = rabbit://openstack:qwertz@localhost:5672//
+
+- name: Configure keystone token provider
+  ansible.builtin.lineinfile:
+    path: /etc/keystone/keystone.conf
+    regexp: '^provider = '
+    insertafter: '^#provider = fernet'
+    line: provider = fernet
+
+- name: Configure keystone memcached
+  ansible.builtin.lineinfile:
+    path: /etc/keystone/keystone.conf
+    regexp: '^memcache_servers = localhost'
+    insertafter: '^#memcache_servers = localhost'
+    line: memcache_servers = localhost:11211
+
+...

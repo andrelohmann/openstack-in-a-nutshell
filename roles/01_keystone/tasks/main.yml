@@ -1,0 +1,13 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Keystone - the OpenStack Identiy Service"
+
+- name: Install dependencies
+  ansible.builtin.include_tasks: dependencies.yml
+
+- name: Install keystone
+  ansible.builtin.include_tasks: keystone.yml
+
+...
