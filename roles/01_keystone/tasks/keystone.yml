@@ -18,14 +18,14 @@
     path: /etc/keystone/keystone.conf
     regexp: '^connection = sqlite'
     insertafter: '^[database]'
-    line: connection = mysql+pymysql://keystone:qwerty@localhost/keystone
+    line: connection = mysql+pymysql://keystone:qwertz@controller/keystone
 
 - name: Configure keystone rabbitmq
   ansible.builtin.lineinfile:
     path: /etc/keystone/keystone.conf
     regexp: '^transport_url = rabbit://'
     insertafter: '^#transport_url = rabbit://'
-    line: transport_url = rabbit://openstack:qwertz@localhost:5672//
+    line: transport_url = rabbit://openstack:qwertz@controller:5672//
 
 - name: Configure keystone token provider
   ansible.builtin.lineinfile:
@@ -37,8 +37,38 @@
 - name: Configure keystone memcached
   ansible.builtin.lineinfile:
     path: /etc/keystone/keystone.conf
-    regexp: '^memcache_servers = localhost'
-    insertafter: '^#memcache_servers = localhost'
-    line: memcache_servers = localhost:11211
+    regexp: '^memcache_servers = controller'
+    insertafter: '^#memcache_servers = controller'
+    line: memcache_servers = controller:11211
+
+- name: Initialize the database
+  ansible.builtin.shell: su -s /bin/sh -c "keystone-manage db_sync" keystone
+  args:
+    executable: /bin/bash
+
+- name: Initialize Fernet key repositories
+  ansible.builtin.shell: |
+    keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone && \
+    keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+  args:
+    executable: /bin/bash
+
+- name: Bootstrap the Identity service
+  ansible.builtin.shell: |
+    keystone-manage bootstrap --bootstrap-password qwertz \
+    --bootstrap-admin-url http://controller:5000/v3/ \
+    --bootstrap-internal-url http://controller:5000/v3/ \
+    --bootstrap-public-url http://controller:5000/v3/ \
+    --bootstrap-region-id RegionOne
+  args:
+    executable: /bin/bash
+
+- name: Configure keystone memcached
+  ansible.builtin.lineinfile:
+    path: /etc/apache2/apache2.conf
+    regexp: '^ServerName'
+    insertafter: '^#ServerRoot'
+    line: ServerName controller
+#ServerRoot
 
 ...

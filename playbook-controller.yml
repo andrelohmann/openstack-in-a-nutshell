@@ -9,6 +9,16 @@
 
   pre_tasks:
 
+  - name: Set the hostname
+    ansible.builtin.hostname:
+      name: controller
+
+  - name: Update hosts file
+    ansible.builtin.lineinfile:
+      path: /etc/hosts
+      regexp: '^127.0.0.1'
+      line: 127.0.0.1 localhost controller
+
   - name: Install dependencies packages
     ansible.builtin.apt:
       name: "{{ packages }}"
@@ -24,6 +34,8 @@
 
   - name: Install cloud-archive:bobcat
     command: add-apt-repository cloud-archive:bobcat -y
+  # - name: Install cloud-archive:antelope
+  #   command: add-apt-repository cloud-archive:antelope -y
 
   roles:
   - 01_keystone
