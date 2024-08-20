@@ -4,7 +4,9 @@ Documentation and ansible role collection to setup an openstack environment from
 
 ## Useful links and
 
+* https://www.youtube.com/watch?v=wsy9OY-ot7E
 * https://www.youtube.com/watch?v=mCiyTsMvnko
+* https://docs.openstack.org/2023.2/install/
 * https://docs.openstack.org/de/install-guide/environment-packages-ubuntu.html
 
 ## Keystone
@@ -56,3 +58,11 @@ Put all together
 ```
 openstack role add --project demo --user demo user
 ```
+
+## glance
+
+Install glance - the OpenStack Image Service
+
+* https://docs.openstack.org/glance/latest/install/install-ubuntu.html
+
+### Test

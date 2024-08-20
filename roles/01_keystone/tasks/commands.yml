@@ -1,0 +1,59 @@
+---
+
+- name: Create the example domain
+  ansible.builtin.shell: |
+    openstack domain create --description "An Example Domain" example
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the service project
+  ansible.builtin.shell: |
+    openstack project create --domain default --description "Service Project" service
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the demo project
+  ansible.builtin.shell: |
+    openstack project create --domain default --description "Demo Project" myproject
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create demo user
+  ansible.builtin.expect:
+    command: openstack user create --domain default --password-prompt myuser
+    responses:
+      'User Password': 'qwertz'
+      'Repeat User Password': 'qwertz'
+    timeout: 30
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the demo role
+  ansible.builtin.shell: |
+    openstack role create myrole
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Add project and user to role
+  ansible.builtin.shell: |
+    openstack role add --project myproject --user myuser myrole
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+...

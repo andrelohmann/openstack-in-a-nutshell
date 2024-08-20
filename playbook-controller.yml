@@ -38,7 +38,8 @@
   #   command: add-apt-repository cloud-archive:antelope -y
 
   roles:
-  - 01_keystone
+  #- 01_keystone
+  - 02_glance
 
   tasks:
 

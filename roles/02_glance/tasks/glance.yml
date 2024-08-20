@@ -1,6 +1,6 @@
 ---
 
-- name: Install keystone packages
+- name: Install glance packages
   ansible.builtin.apt:
     name: "{{ packages }}"
     state: present
@@ -11,16 +11,16 @@
     cache_valid_time: 3600
   vars:
     packages:
-    - keystone
+    - glance
 
-- name: Configure keystone connection
+- name: Configure glance connection
   ansible.builtin.lineinfile:
-    path: /etc/keystone/keystone.conf
+    path: /etc/glance/glance-api.conf
     regexp: '^connection = sqlite'
     insertafter: '^[database]'
-    line: connection = mysql+pymysql://keystone:qwertz@controller/keystone
+    line: connection = mysql+pymysql://glance:qwertz@controller/glance
 
-- name: Configure keystone rabbitmq
+- name: Configure glance rabbitmq
   ansible.builtin.lineinfile:
     path: /etc/keystone/keystone.conf
     regexp: '^transport_url = rabbit://'
@@ -69,5 +69,6 @@
     regexp: '^ServerName'
     insertafter: '^#ServerRoot'
     line: ServerName controller
+#ServerRoot
 
 ...

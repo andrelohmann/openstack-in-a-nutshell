@@ -10,4 +10,13 @@
 - name: Install keystone
   ansible.builtin.include_tasks: keystone.yml
 
+- name: Create openstack admin user
+  ansible.builtin.include_tasks: admin-user.yml
+
+- name: Create openstack admin user
+  ansible.builtin.include_tasks: admin-user.yml
+
+- name: Create a domain, projects, users, and roles
+  ansible.builtin.include_tasks: commands.yml
+
 ...
