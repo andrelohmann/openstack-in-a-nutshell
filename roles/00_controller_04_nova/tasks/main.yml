@@ -1,0 +1,19 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Nova - the OpenStack Compute Service"
+
+- name: Create database
+  ansible.builtin.include_tasks: database.yml
+
+- name: Run prerequisites
+  ansible.builtin.include_tasks: prerequisites.yml
+
+- name: Install nova
+  ansible.builtin.include_tasks: nova.yml
+
+#- name: Validate nova
+#  ansible.builtin.include_tasks: commands.yml
+
+...

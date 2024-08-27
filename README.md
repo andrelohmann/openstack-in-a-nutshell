@@ -1,6 +1,12 @@
 # openstack-in-a-nutshell
 
-Documentation and ansible role collection to setup an openstack environment from scratch
+Documentation and ansible role collection to setup an openstack environment from scratch.
+
+Just clone the repo and run
+
+```
+vagrant up
+```
 
 ## Useful links and
 
@@ -26,7 +32,7 @@ Documentation and ansible role collection to setup an openstack environment from
 
 #### Dependencies
 
-!!! Currently the network is not taken into concideration. Therefor the Etcd Config got passed the default vagrant nated IP of 10.0.2.15.
+!!! Currently the network is not taken into concideration. Therefor the Etcd config and nova my_ip config got passed the default vagrant nated IP of 10.0.2.15.
 
 #### Keystone
 
@@ -125,7 +131,7 @@ glance image-create --name "cirros" --file cirros-0.4.0-x86_64-disk.img --disk-f
 glance image-list
 ```
 
-#### PLACEMENT_PASS
+#### placement
 
 Install placement - the OpenStack placement service used to track resource provider inventories and usages
 
@@ -156,4 +162,18 @@ List available resources and traits
 ```
 openstack --os-placement-api-version 1.2 resource class list --sort-column name
 openstack --os-placement-api-version 1.6 trait list --sort-column name
+```
+
+#### nova
+
+Install nova - the OpenStack compute service
+
+* https://docs.openstack.org/nova/2024.1/install/controller-install-ubuntu.html
+
+##### Test
+
+Verify nova cell0 and cell1 are registered correctly
+
+```
+su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
 ```

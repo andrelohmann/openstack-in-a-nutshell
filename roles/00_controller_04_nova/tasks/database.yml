@@ -1,0 +1,72 @@
+---
+
+- name: Create the nova database
+  community.mysql.mysql_db:
+    name: nova
+    state: present
+
+- name: Create user nova and give all permissions to nova from localhost
+  community.mysql.mysql_user:
+    name: nova
+    password: "{{ NOVA_DBPASS }}"
+    priv: 'nova.*:ALL'
+    host: localhost
+    state: present
+    append_privs: true
+
+- name: Create user nova and give all permissions to nova from %
+  community.mysql.mysql_user:
+    name: nova
+    password: "{{ NOVA_DBPASS }}"
+    priv: 'nova.*:ALL'
+    host: '%'
+    state: present
+    append_privs: true
+
+- name: Create the nova database
+  community.mysql.mysql_db:
+    name: nova_api
+    state: present
+
+- name: Create user nova and give all permissions to nova_api from localhost
+  community.mysql.mysql_user:
+    name: nova
+    password: "{{ NOVA_DBPASS }}"
+    priv: 'nova_api.*:ALL'
+    host: localhost
+    state: present
+    append_privs: true
+
+- name: Create user nova and give all permissions to nova_api from %
+  community.mysql.mysql_user:
+    name: nova
+    password: "{{ NOVA_DBPASS }}"
+    priv: 'nova_api.*:ALL'
+    host: '%'
+    state: present
+    append_privs: true
+
+- name: Create the nova database
+  community.mysql.mysql_db:
+    name: nova_cell0
+    state: present
+
+- name: Create user nova and give all permissions to nova_cell0 from localhost
+  community.mysql.mysql_user:
+    name: nova
+    password: "{{ NOVA_DBPASS }}"
+    priv: 'nova_cell0.*:ALL'
+    host: localhost
+    state: present
+    append_privs: true
+
+- name: Create user nova and give all permissions to nova_cell0 from %
+  community.mysql.mysql_user:
+    name: nova
+    password: "{{ NOVA_DBPASS }}"
+    priv: 'nova_cell0.*:ALL'
+    host: '%'
+    state: present
+    append_privs: true
+
+...

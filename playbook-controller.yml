@@ -24,6 +24,10 @@
     PLACEMENT_DBPASS: Plac3DB
     # Password of the Placement service user placement
     PLACEMENT_PASS: Plac3
+    # Database password for Compute service
+    NOVA_DBPASS: N0vaDB
+    # Password of Compute service user nova
+    NOVA_PASS: N0va
 
     # Database password for the Block Storage service
     #CINDER_DBPASS
@@ -37,10 +41,7 @@
     #NEUTRON_DBPASS
     # Password of Networking service user neutron
     #NEUTRON_PASS
-    # Database password for Compute service
-    #NOVA_DBPASS
-    # Password of Compute service user nova
-    #NOVA_PASS
+
 
 
   pre_tasks:
@@ -80,6 +81,7 @@
   - 00_controller_01_keystone
   - 00_controller_02_glance
   - 00_controller_03_placement
+  - 00_controller_04_nova
 
   tasks:
 

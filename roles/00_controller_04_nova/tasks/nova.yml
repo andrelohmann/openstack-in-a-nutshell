@@ -1,0 +1,202 @@
+---
+
+- name: Install nova packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - nova-api
+    - nova-conductor
+    - nova-novncproxy
+    - nova-scheduler
+
+- name: Configure nova connection
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "api_database", option: "connection", value: "mysql+pymysql://nova:{{ NOVA_DBPASS }}@controller/nova_api" }
+    - { section: "database", option: "connection", value: "mysql+pymysql://nova:{{ NOVA_DBPASS }}@controller/nova" }
+
+- name: Configure rabbitmq access
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
+
+- name: Configure Identity service access
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "api", option: "auth_strategy", value: "keystone" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
+    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
+    - { section: "keystone_authtoken", option: "auth_type", value: "password" }
+    - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
+    - { section: "keystone_authtoken", option: "user_domain_name", value: "Default" }
+    - { section: "keystone_authtoken", option: "project_name", value: "service" }
+    - { section: "keystone_authtoken", option: "username", value: "nova" }
+    - { section: "keystone_authtoken", option: "password", value: "{{ NOVA_PASS }}" }
+
+# - name: Remove uneccessary keystone_authtoken configs
+#   ansible.builtin.ini_file:
+#     path: /etc/nova/nova.conf
+#     section: "{{ item.section }}"
+#     option: "{{ item.option }}"
+#     state: "absent"
+#   with_items:
+#     - { section: "keystone_authtoken", option: "auth_uri" }
+#     - { section: "keystone_authtoken", option: "auth_version" }
+#     - { section: "keystone_authtoken", option: "interface" }
+#     - { section: "keystone_authtoken", option: "delay_auth_decision" }
+#     - { section: "keystone_authtoken", option: "http_connect_timeout" }
+#     - { section: "keystone_authtoken", option: "http_request_max_retries" }
+#     - { section: "keystone_authtoken", option: "cache" }
+#     - { section: "keystone_authtoken", option: "certfile" }
+#     - { section: "keystone_authtoken", option: "keyfile" }
+#     - { section: "keystone_authtoken", option: "cafile" }
+#     - { section: "keystone_authtoken", option: "insecure" }
+#     - { section: "keystone_authtoken", option: "region_name" }
+#     - { section: "keystone_authtoken", option: "token_cache_time" }
+#     - { section: "keystone_authtoken", option: "memcache_security_strategy" }
+#     - { section: "keystone_authtoken", option: "memcache_secret_key" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_dead_retry" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_maxsize" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_socket_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_unused_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_conn_get_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_use_advanced_pool" }
+#     - { section: "keystone_authtoken", option: "include_service_catalog" }
+#     - { section: "keystone_authtoken", option: "enforce_token_bind" }
+#     - { section: "keystone_authtoken", option: "service_token_roles" }
+#     - { section: "keystone_authtoken", option: "service_token_roles_required" }
+#     - { section: "keystone_authtoken", option: "service_type" }
+#     - { section: "keystone_authtoken", option: "auth_section" }
+
+- name: Configure service user tokens
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "service_user", option: "send_service_user_token", value: "true" }
+    - { section: "service_user", option: "auth_url", value: "https://controller/identity" }
+    - { section: "service_user", option: "auth_strategy", value: "keystone" }
+    - { section: "service_user", option: "auth_type", value: "password" }
+    - { section: "service_user", option: "project_domain_name", value: "Default" }
+    - { section: "service_user", option: "project_name", value: "service" }
+    - { section: "service_user", option: "user_domain_name", value: "Default" }
+    - { section: "service_user", option: "username", value: "nova" }
+    - { section: "service_user", option: "password", value: "{{ NOVA_PASS }}" }
+
+- name: Configure management interface IP address of the controller node
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "DEFAULT", option: "my_ip", value: "10.0.2.15" }
+
+- name: Configure vnc
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "vnc", option: "enabled", value: "true" }
+    - { section: "vnc", option: "server_listen", value: "$my_ip" }
+    - { section: "vnc", option: "server_proxyclient_address", value: "$my_ip" }
+
+- name: Configure glance
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "glance", option: "api_servers", value: "http://controller:9292" }
+
+- name: Configure oslo concurrency
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/nova/tmp" }
+
+- name: Configure placement
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "placement", option: "region_name", value: "RegionOne" }
+    - { section: "placement", option: "project_domain_name", value: "Default" }
+    - { section: "placement", option: "project_name", value: "service" }
+    - { section: "placement", option: "auth_type", value: "password" }
+    - { section: "placement", option: "user_domain_name", value: "Default" }
+    - { section: "placement", option: "auth_url", value: "http://controller:5000/v3" }
+    - { section: "placement", option: "username", value: "placement" }
+    - { section: "placement", option: "password", value: "{{ PLACEMENT_PASS }}" }
+
+- name: Initialize the nova-api database
+  ansible.builtin.shell: su -s /bin/sh -c "nova-manage api_db sync" nova
+  args:
+    executable: /bin/bash
+
+- name: Register the cell0 database
+  ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova
+  args:
+    executable: /bin/bash
+
+- name: Create the cell1 cell
+  ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova
+  args:
+    executable: /bin/bash
+
+- name: Populate the nova database
+  ansible.builtin.shell: su -s /bin/sh -c "nova-manage db sync" nova
+  args:
+    executable: /bin/bash
+
+- name: Restart nova-api
+  ansible.builtin.systemd:
+    name: nova-api.service
+    state: restarted
+
+- name: Restart nova-scheduler
+  ansible.builtin.systemd:
+    name: nova-scheduler.service
+    state: restarted
+
+- name: Restart nova-conductor
+  ansible.builtin.systemd:
+    name: nova-conductor.service
+    state: restarted
+
+- name: Restart nova-novncproxy
+  ansible.builtin.systemd:
+    name: nova-novncproxy.service
+    state: restarted
+
+...

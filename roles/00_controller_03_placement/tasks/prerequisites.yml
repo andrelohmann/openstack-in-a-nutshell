@@ -1,6 +1,6 @@
 ---
 
-- name: Create PLACEMENT_DBPASS user
+- name: Create the placement user
   ansible.builtin.expect:
     command: openstack user create --domain default --password-prompt placement
     responses:
@@ -36,12 +36,6 @@
   become: true
   become_user: admin-os
   become_flags: -i
-#  # We need to extract the endpoint ID in the placement installation
-#  register: _public_placement_service_api_endpoint
-
-#- name: Debug _public_placement_service_api_endpoint
-#  ansible.builtin.debug:
-#    msg: "{{ _public_placement_service_api_endpoint }}"
 
 - name: Create the internal placement service API endpoint
   ansible.builtin.shell: |

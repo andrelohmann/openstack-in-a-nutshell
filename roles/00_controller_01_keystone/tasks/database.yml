@@ -12,6 +12,7 @@
     priv: 'keystone.*:ALL'
     host: localhost
     state: present
+    append_privs: true
 
 - name: Create user keystone and give all permissions to keystone from %
   community.mysql.mysql_user:
@@ -20,5 +21,6 @@
     priv: 'keystone.*:ALL'
     host: '%'
     state: present
+    append_privs: true
 
 ...

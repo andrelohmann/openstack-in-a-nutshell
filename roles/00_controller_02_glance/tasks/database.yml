@@ -12,6 +12,7 @@
     priv: 'glance.*:ALL'
     host: localhost
     state: present
+    append_privs: true
 
 - name: Create user glance and give all permissions to glance from %
   community.mysql.mysql_user:
@@ -20,5 +21,6 @@
     priv: 'glance.*:ALL'
     host: '%'
     state: present
+    append_privs: true
 
 ...
