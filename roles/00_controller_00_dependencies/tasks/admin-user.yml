@@ -11,6 +11,7 @@
     cache_valid_time: 3600
   vars:
     packages:
+    - python3-openstackclient
     - acl
 
 - name: Create openstack group
@@ -39,7 +40,7 @@
     marker: "# <!-- {mark} ANSIBLE MANAGED BLOCK - OpenStack Profile -->"
     block: |
       export OS_USERNAME=admin
-      export OS_PASSWORD=qwertz
+      export OS_PASSWORD={{ ADMIN_PASS }}
       export OS_PROJECT_NAME=admin
       export OS_USER_DOMAIN_NAME=Default
       export OS_AUTH_URL=http://controller:5000/v3

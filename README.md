@@ -6,16 +6,33 @@ Documentation and ansible role collection to setup an openstack environment from
 
 * https://www.youtube.com/watch?v=wsy9OY-ot7E
 * https://www.youtube.com/watch?v=mCiyTsMvnko
-* https://docs.openstack.org/2023.2/install/
+* https://docs.openstack.org/install-guide/index.html
+* https://docs.openstack.org/install-guide/openstack-services.html
 * https://docs.openstack.org/de/install-guide/environment-packages-ubuntu.html
+* https://docs.openstack.org/python-openstackclient/latest/
 
-## Keystone
+## Network
 
-Installing Keystone - the OpenStack Identiy Service
+* https://docs.openstack.org/install-guide/environment-networking.html
+* https://docs.openstack.org/install-guide/environment-ntp.html
 
-* https://docs.openstack.org/keystone/latest/install/keystone-install-ubuntu.html
+## Nodes
 
-### Test
+* https://docs.openstack.org/install-guide/openstack-services.html
+
+### Controller
+
+#### Dependencies
+
+!!! Currently the network is not taken into concideration. Therefor the Etcd Config got passed the default vagrant nated IP of 10.0.2.15.
+
+#### Keystone
+
+Installing Keystone - the OpenStack Identity Service
+
+* https://docs.openstack.org/keystone/2024.1/install/index-ubuntu.html
+
+##### Test
 
 Set your openstack cli environment variables properly
 
@@ -59,10 +76,40 @@ Put all together
 openstack role add --project demo --user demo user
 ```
 
-## glance
+#### glance
 
 Install glance - the OpenStack Image Service
 
 * https://docs.openstack.org/glance/latest/install/install-ubuntu.html
 
-### Test
+##### Test
+
+Set your openstack cli environment variables properly
+
+```
+export OS_USERNAME=admin
+export OS_PASSWORD=qwertz
+export OS_PROJECT_NAME=admin
+export OS_USER_DOMAIN_NAME=Default
+export OS_AUTH_URL=http://controller:5000/v3
+export OS_IDENTITY_API_VERSION=3
+export OS_IMAGE_API_VERSION=2
+```
+
+Download the cirros image
+
+```
+wget http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
+```
+
+Upload the cirros image
+
+```
+glance image-create --name "cirros" --file cirros-0.4.0-x86_64-disk.img --disk-format qcow2 --container-format bare --visibility=public
+```
+
+Verify the image was uploaded
+
+```
+glance image-list
+```

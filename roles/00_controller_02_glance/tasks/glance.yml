@@ -1,0 +1,86 @@
+---
+
+- name: Install glance packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - glance
+
+- name: Configure glance connection
+  ansible.builtin.lineinfile:
+    path: /etc/glance/glance-api.conf
+    regexp: '^connection = sqlite'
+    insertafter: '^[database]'
+    line: "connection = mysql+pymysql://glance:{{ GLANCE_DBPASS }}@controller/glance"
+
+- name: Configure Identity service access
+  ansible.builtin.ini_file:
+    path: /etc/glance/glance-api.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000" }
+    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000" }
+    - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
+    - { section: "keystone_authtoken", option: "auth_type", value: "password" }
+    - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
+    - { section: "keystone_authtoken", option: "user_domain_name", value: "Default" }
+    - { section: "keystone_authtoken", option: "project_name", value: "service" }
+    - { section: "keystone_authtoken", option: "username", value: "glance" }
+    - { section: "keystone_authtoken", option: "password", value: "{{ GLANCE_PASS }}" }
+    - { section: "paste_deploy", option: "flavor", value: "keystone" }
+
+- name: Configure the local file system store and location of image files
+  ansible.builtin.ini_file:
+    path: /etc/glance/glance-api.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "DEFAULT", option: "enabled_backends", value: "fs:file" }
+    - { section: "glance_store", option: "default_backend", value: "fs" }
+    - { section: "fs", option: "filesystem_store_datadir", value: "/var/lib/glance/images/" }
+
+- name: Configure oslo section access to keystone
+  ansible.builtin.ini_file:
+    path: /etc/glance/glance-api.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "oslo_limit", option: "auth_url", value: "http://controller:5000" }
+    - { section: "oslo_limit", option: "auth_type", value: "password" }
+    - { section: "oslo_limit", option: "user_domain_id", value: "default" }
+    - { section: "oslo_limit", option: "username", value: "glance" }
+    - { section: "oslo_limit", option: "system_scope", value: "all" }
+    - { section: "oslo_limit", option: "password", value: "{{ GLANCE_PASS }}" }
+    - { section: "oslo_limit", option: "endpoint_id", value: "{{ _public_image_service_api_endpoint.stdout|from_json|json_query('id') }}" }
+    - { section: "oslo_limit", option: "region_name", value: "RegionOne" }
+
+- name: Configure enable tenant quotas
+  ansible.builtin.ini_file:
+    path: /etc/glance/glance-api.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "DEFAULT", option: "use_keystone_limits", value: "True" }
+
+- name: Initialize the database
+  ansible.builtin.shell: su -s /bin/sh -c "glance-manage db_sync" glance
+  args:
+    executable: /bin/bash
+
+- name: Restart glance
+  ansible.builtin.systemd:
+    name: glance-api.service
+    state: restarted
+...

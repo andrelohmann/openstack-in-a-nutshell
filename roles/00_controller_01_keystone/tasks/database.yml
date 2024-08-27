@@ -1,0 +1,24 @@
+---
+
+- name: Create the keystone database
+  community.mysql.mysql_db:
+    name: keystone
+    state: present
+
+- name: Create user keystone and give all permissions to keystone from localhost
+  community.mysql.mysql_user:
+    name: keystone
+    password: "{{ KEYSTONE_DBPASS }}"
+    priv: 'keystone.*:ALL'
+    host: localhost
+    state: present
+
+- name: Create user keystone and give all permissions to keystone from %
+  community.mysql.mysql_user:
+    name: keystone
+    password: "{{ KEYSTONE_DBPASS }}"
+    priv: 'keystone.*:ALL'
+    host: '%'
+    state: present
+
+...

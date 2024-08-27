@@ -1,0 +1,50 @@
+---
+
+- name: Install dependencies packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - mariadb-server
+    - python3-pymysql
+
+- name: Create mariadb.conf.d/99-openstack.cnf
+  ansible.builtin.copy:
+    src: 99-openstack.cnf
+    dest: /etc/mysql/mariadb.conf.d/99-openstack.cnf
+
+- name: Restart mariadb
+  ansible.builtin.systemd:
+    name: mariadb.service
+    state: restarted
+
+- name: Secure mariadb
+  ansible.builtin.expect:
+    command: mysql_secure_installation
+    responses:
+      'Enter current password for root': ''
+      'Switch to unix_socket authentication': 'n'
+      'Change the root password': 'y'
+      'New password': '{{ ROOT_DBPASS }}'
+      'Re-enter new password': '{{ ROOT_DBPASS }}'
+      'Remove anonymous users': 'y'
+      'Disallow root login remotely': 'y'
+      'Remove test database': 'y'
+      'Reload privilege tables now': 'y'
+    timeout: 1
+    creates: /root/.my.cnf
+  register: secure_mariadb
+  failed_when: "'... Failed!' in secure_mariadb.stdout_lines"
+
+- name: Create root/.my.cnf
+  ansible.builtin.template:
+    src: my.cnf
+    dest: /root/.my.cnf
+
+...

@@ -5,7 +5,40 @@
   become_method: sudo
 
   vars:
-    some_var: true
+    # Database password of the root user
+    ROOT_DBPASS: S3cr3tDB
+    # https://docs.openstack.org/install-guide/environment-security.html
+    # Password of user admin
+    ADMIN_PASS: qwertz
+    # Password of user demo
+    DEMO_PASS: qwerty
+    # Password of RabbitMQ user openstack
+    RABBIT_PASS: S3cre3tRabbit
+    # Database password of Identity service
+    KEYSTONE_DBPASS: K3yst0neDB
+    # Database password for Image service
+    GLANCE_DBPASS: Glanc3DB
+    # Password of Image service user glance
+    GLANCE_PASS: Glanc3
+
+    # Database password for the Block Storage service
+    #CINDER_DBPASS
+    # Password of Block Storage service user cinder
+    #CINDER_PASS
+    # Database password for the Dashboard
+    #DASH_DBPASS
+    # Secret for the metadata proxy
+    #METADATA_SECRET
+    # Database password for the Networking service
+    #NEUTRON_DBPASS
+    # Password of Networking service user neutron
+    #NEUTRON_PASS
+    # Database password for Compute service
+    #NOVA_DBPASS
+    # Password of Compute service user nova
+    #NOVA_PASS
+    # Password of the Placement service user placement
+    #PLACEMENT_PASS
 
   pre_tasks:
 
@@ -32,14 +65,17 @@
       packages:
       - curl
 
-  - name: Install cloud-archive:bobcat
-    command: add-apt-repository cloud-archive:bobcat -y
+  - name: Install cloud-archive:caracal
+    command: add-apt-repository cloud-archive:caracal -y
+  # - name: Install cloud-archive:bobcat
+  #   command: add-apt-repository cloud-archive:bobcat -y
   # - name: Install cloud-archive:antelope
   #   command: add-apt-repository cloud-archive:antelope -y
 
   roles:
-  #- 01_keystone
-  - 02_glance
+  - 00_controller_00_dependencies
+  - 00_controller_01_keystone
+  - 00_controller_02_glance
 
   tasks:
 

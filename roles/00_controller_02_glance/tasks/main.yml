@@ -1,0 +1,19 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Glance - the OpenStack Image Service"
+
+- name: Create database
+  ansible.builtin.include_tasks: database.yml
+
+- name: Run prerequisites
+  ansible.builtin.include_tasks: prerequisites.yml
+
+- name: Install glance
+  ansible.builtin.include_tasks: glance.yml
+
+- name: Download and create cirros image
+  ansible.builtin.include_tasks: commands.yml
+
+...

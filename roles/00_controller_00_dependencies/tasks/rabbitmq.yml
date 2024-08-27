@@ -1,0 +1,35 @@
+---
+
+- name: Install dependencies packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - rabbitmq-server
+
+- name: Make rabbitmq listen on public interface
+  ansible.builtin.lineinfile:
+    path: /etc/rabbitmq/rabbitmq-env.conf
+    regexp: '^NODE_IP_ADDRESS'
+    insertafter: '^#NODE_IP_ADDRESS'
+    line: NODE_IP_ADDRESS=0.0.0.0
+
+- name: Restart rabbitmq
+  ansible.builtin.systemd:
+    name: rabbitmq-server.service
+    state: restarted
+
+- name: Set rabbitmq user
+  ansible.builtin.shell: |
+    rabbitmqctl add_user openstack {{ RABBIT_PASS }} && \
+    rabbitmqctl set_permissions openstack ".*" ".*" ".*"
+  args:
+    executable: /bin/bash
+
+...

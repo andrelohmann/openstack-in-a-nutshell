@@ -31,8 +31,8 @@
   ansible.builtin.expect:
     command: openstack user create --domain default --password-prompt myuser
     responses:
-      'User Password': 'qwertz'
-      'Repeat User Password': 'qwertz'
+      'User Password': '{{ DEMO_PASS }}'
+      'Repeat User Password': '{{ DEMO_PASS }}'
     timeout: 30
   become: true
   become_user: admin-os
