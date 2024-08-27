@@ -112,7 +112,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "DEFAULT", option: "my_ip", value: "10.0.2.15" }
+    - { section: "DEFAULT", option: "my_ip", value: "{{ MGT_IP_CONTROLLER }}" }
 
 - name: Configure vnc
   ansible.builtin.ini_file:

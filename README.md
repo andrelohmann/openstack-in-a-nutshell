@@ -2,11 +2,19 @@
 
 Documentation and ansible role collection to setup an openstack environment from scratch.
 
+## Usage
+
 Just clone the repo and run
 
 ```
 vagrant up
 ```
+
+During the installation, you will be asked several things:
+
+* Install vagrant-hostmanager plugin
+* Select the network interface, that is connected to the internet
+* Give Root password for the hostmanager plugin
 
 ## Useful links and
 
@@ -21,8 +29,20 @@ vagrant up
 
 ## Network
 
-* https://docs.openstack.org/install-guide/environment-networking.html
-* https://docs.openstack.org/install-guide/environment-ntp.html
+The simple [Host Networking](https://docs.openstack.org/install-guide/environment-networking.html) Stack is chosen, which consists of a management and a provider network. There are two options available, provider network and self-service network. The ansible role, installing neutron, is configured to deploy the self-service network option.
+
+The vagrant machine emulates these two networks the following way:
+
+* 1 x Controller Node
+  * 1 x management network device - private_network (10.0.0.11)
+  * 1 x provider network device - public_network (dhcp)
+* 1 x Compute Node
+  * 1 x management network device - private_network (10.0.0.21)
+  * 1 x provider network device - public_network (dhcp)
+
+The self-service network options requires to link the provider network interface to a bridge and then route all traffic over that bridge, instead of the interface.
+
+Please read the Vagrantfile, to figure out, how this is done.
 
 ## Nodes
 
@@ -32,7 +52,10 @@ vagrant up
 
 #### Dependencies
 
-!!! Currently the network is not taken into concideration. Therefor the Etcd config and nova my_ip config got passed the default vagrant nated IP of 10.0.2.15.
+* MariaDB
+* RabbitMQ
+* Memcache
+* Etcd
 
 #### Keystone
 
@@ -176,4 +199,52 @@ Verify nova cell0 and cell1 are registered correctly
 
 ```
 su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
+```
+
+#### neutron
+
+Install neutron - the OpenStack networking service
+
+* https://docs.openstack.org/neutron/2024.1/install/install-ubuntu.html
+
+The self-service networking option is chosen by default
+
+##### Test
+
+Verify neutron
+
+```
+?
+```
+
+### Compute1
+
+#### nova
+
+Install nova - the OpenStack compute service
+
+* https://docs.openstack.org/nova/2024.1/install/compute-install-ubuntu.html
+
+##### Test
+
+Verify nova cell0 and cell1 are registered correctly
+
+```
+su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
+```
+
+#### neutron
+
+Install neutron - the OpenStack networking service
+
+* https://docs.openstack.org/neutron/2024.1/install/compute-install-ubuntu.html
+
+The self-service networking option is chosen by default
+
+##### Test
+
+Verify neutron
+
+```
+?
 ```

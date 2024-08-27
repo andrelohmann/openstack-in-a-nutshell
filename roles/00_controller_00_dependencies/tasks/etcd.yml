@@ -14,7 +14,6 @@
     - etcd
 
 # https://docs.openstack.org/install-guide/environment-etcd-ubuntu.html
-# !!! IP 10.0.2.15 is currently the vagrant nated IP
 - name: Configure Etcd
   ansible.builtin.blockinfile:
     path: /etc/default/etcd
@@ -24,19 +23,16 @@
       ETCD_DATA_DIR="/var/lib/etcd"
       ETCD_INITIAL_CLUSTER_STATE="new"
       ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster-01"
-      ETCD_INITIAL_CLUSTER="controller=http://10.0.2.15:2380"
-      ETCD_INITIAL_ADVERTISE_PEER_URLS="http://10.0.2.15:2380"
-      ETCD_ADVERTISE_CLIENT_URLS="http://10.0.2.15:2379"
+      ETCD_INITIAL_CLUSTER="controller=http://{{ MGT_IP_CONTROLLER }}:2380"
+      ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ MGT_IP_CONTROLLER }}:2380"
+      ETCD_ADVERTISE_CLIENT_URLS="http://{{ MGT_IP_CONTROLLER }}:2379"
       ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
-      ETCD_LISTEN_CLIENT_URLS="http://10.0.2.15:2379"
+      ETCD_LISTEN_CLIENT_URLS="http://{{ MGT_IP_CONTROLLER }}:2379"
 
 - name: Restart memcached
   ansible.builtin.systemd:
     name: etcd.service
     enabled: true
     state: restarted
-
-
-
 
 ...

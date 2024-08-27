@@ -18,13 +18,13 @@
 
   - name: Set the hostname
     ansible.builtin.hostname:
-      name: controller
+      name: compute1
 
   - name: Update hosts file
     ansible.builtin.lineinfile:
       path: /etc/hosts
       regexp: '^127.0.0.1'
-      line: 127.0.0.1 localhost controller
+      line: 127.0.0.1 localhost compute1
 
   - name: Install dependencies packages
     ansible.builtin.apt:
@@ -47,12 +47,12 @@
   #   command: add-apt-repository cloud-archive:antelope -y
 
   roles:
-  - 00_controller_00_dependencies
-  - 00_controller_01_keystone
-  - 00_controller_02_glance
-  - 00_controller_03_placement
-  - 00_controller_04_nova
-  - 00_controller_05_neutron
+  #- 00_controller_00_dependencies
+  #- 00_controller_01_keystone
+  #- 00_controller_02_glance
+  #- 00_controller_03_placement
+  #- 00_controller_04_nova
+  #- 00_controller_05_neutron
 
   tasks:
 

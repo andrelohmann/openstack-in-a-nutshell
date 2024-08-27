@@ -1,0 +1,26 @@
+---
+
+- name: Create the nova database
+  community.mysql.mysql_db:
+    name: neutron
+    state: present
+
+- name: Create user neutron and give all permissions to neutron from localhost
+  community.mysql.mysql_user:
+    name: neutron
+    password: "{{ NEUTRON_DBPASS }}"
+    priv: 'neutron.*:ALL'
+    host: localhost
+    state: present
+    append_privs: true
+
+- name: Create user neutron and give all permissions to neutron from %
+  community.mysql.mysql_user:
+    name: neutron
+    password: "{{ NEUTRON_DBPASS }}"
+    priv: 'neutron.*:ALL'
+    host: '%'
+    state: present
+    append_privs: true
+
+...

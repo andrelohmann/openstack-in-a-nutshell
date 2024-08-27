@@ -1,0 +1,35 @@
+---
+configs:
+  ansible_version: latest
+  vms:
+    controller:
+      memory: "3072"
+      cpus: "2"
+      disk_size: "10GB"
+      internal_ip: "10.0.0.11"
+      domain: controller
+      aliases:
+      - controller.os.lokal
+    compute1:
+      memory: "1024"
+      cpus: "2"
+      disk_size: "10GB"
+      internal_ip: "10.0.0.21"
+      domain: compute1
+      aliases:
+      - compute1.os.lokal
+    block1:
+      memory: "1024"
+      cpus: "2"
+      internal_ip: "10.0.0.31"
+      domain: block1
+      aliases:
+      - block1.os.lokal
+    object1:
+      memory: "1024"
+      cpus: "2"
+      internal_ip: "10.0.0.41"
+      domain: object1
+      aliases:
+      - object1.os.lokal
+...

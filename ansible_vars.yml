@@ -1,0 +1,48 @@
+---
+
+# Database password of the root user
+ROOT_DBPASS: S3cr3tDB
+# https://docs.openstack.org/install-guide/environment-security.html
+# Password of user admin
+ADMIN_PASS: qwertz
+# Password of user demo
+DEMO_PASS: qwerty
+# Password of RabbitMQ user openstack
+RABBIT_PASS: S3cre3tRabbit
+# Database password of Identity service
+KEYSTONE_DBPASS: K3yst0neDB
+# Database password for Image service
+GLANCE_DBPASS: Glanc3DB
+# Password of Image service user glance
+GLANCE_PASS: Glanc3
+# Database password for Placement service
+PLACEMENT_DBPASS: Plac3DB
+# Password of the Placement service user placement
+PLACEMENT_PASS: Plac3
+# Database password for Compute service
+NOVA_DBPASS: N0vaDB
+# Password of Compute service user nova
+NOVA_PASS: N0va
+# Database password for the Networking service
+NEUTRON_DBPASS: N3utr0nDB
+# Password of Networking service user neutron
+NEUTRON_PASS: N3utr0n
+
+# IPs of the management Network
+MGT_IP_CONTROLLER: 10.0.0.11
+
+# Chrony - NTP Server
+NTP_SERVER: pool.ntp.org
+INTERNAL_NETWORK: 10.0.0.0/24
+
+# Secret for the metadata proxy
+METADATA_SECRET: M3taDataS3cr3t
+
+# Database password for the Block Storage service
+#CINDER_DBPASS
+# Password of Block Storage service user cinder
+#CINDER_PASS
+# Database password for the Dashboard
+#DASH_DBPASS
+
+...

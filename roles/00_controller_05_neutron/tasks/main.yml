@@ -1,0 +1,19 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Neutron - the OpenStack Networking Service"
+
+- name: Create database
+  ansible.builtin.include_tasks: database.yml
+
+- name: Run prerequisites
+  ansible.builtin.include_tasks: prerequisites.yml
+
+- name: Install neutron
+  ansible.builtin.include_tasks: neutron.yml
+
+#- name: Validate neutron
+#  ansible.builtin.include_tasks: commands.yml
+
+...

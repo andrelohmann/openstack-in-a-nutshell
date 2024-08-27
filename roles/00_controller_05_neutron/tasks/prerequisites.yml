@@ -1,0 +1,64 @@
+---
+
+- name: Create the neutron user
+  ansible.builtin.expect:
+    command: openstack user create --domain default --password-prompt neutron
+    responses:
+      'User Password': '{{ NEUTRON_PASS }}'
+      'Repeat User Password': '{{ NEUTRON_PASS }}'
+    timeout: 30
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Add the admin role to the neutron user and service project
+  ansible.builtin.shell: |
+    openstack role add --project service --user neutron admin
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the neutron service entity
+  ansible.builtin.shell: |
+    openstack service create --name neutron --description "OpenStack Networking" network
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the public neutron service API endpoint
+  ansible.builtin.shell: openstack endpoint create --region RegionOne network public http://controller:9696 --format json
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+#  # We need to extract the endpoint ID in the neutron installation
+#  register: _public_neutron_service_api_endpoint
+
+#- name: Debug _public_neutron_service_api_endpoint
+#  ansible.builtin.debug:
+#    msg: "{{ _public_neutron_service_api_endpoint }}"
+
+- name: Create the internal neutron service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne network internal http://controller:9696
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the admin neutron service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne network admin http://controller:9696
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+...
