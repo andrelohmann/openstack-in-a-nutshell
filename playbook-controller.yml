@@ -20,6 +20,10 @@
     GLANCE_DBPASS: Glanc3DB
     # Password of Image service user glance
     GLANCE_PASS: Glanc3
+    # Database password for Placement service
+    PLACEMENT_DBPASS: Plac3DB
+    # Password of the Placement service user placement
+    PLACEMENT_PASS: Plac3
 
     # Database password for the Block Storage service
     #CINDER_DBPASS
@@ -37,8 +41,7 @@
     #NOVA_DBPASS
     # Password of Compute service user nova
     #NOVA_PASS
-    # Password of the Placement service user placement
-    #PLACEMENT_PASS
+
 
   pre_tasks:
 
@@ -76,6 +79,7 @@
   - 00_controller_00_dependencies
   - 00_controller_01_keystone
   - 00_controller_02_glance
+  - 00_controller_03_placement
 
   tasks:
 

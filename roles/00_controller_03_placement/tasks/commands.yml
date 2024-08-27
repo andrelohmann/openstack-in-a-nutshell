@@ -1,0 +1,28 @@
+---
+
+- name: Add admin-os user to placement group
+  ansible.builtin.user:
+    name: admin-os
+    groups: placement
+    append: yes
+
+- name: Perform status checks
+  ansible.builtin.shell: |
+    placement-status upgrade check
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: List available resources and traits
+  ansible.builtin.shell: |
+    openstack --os-placement-api-version 1.2 resource class list --sort-column name
+    openstack --os-placement-api-version 1.6 trait list --sort-column name
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+...

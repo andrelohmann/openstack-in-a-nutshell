@@ -1,0 +1,64 @@
+---
+
+- name: Create PLACEMENT_DBPASS user
+  ansible.builtin.expect:
+    command: openstack user create --domain default --password-prompt placement
+    responses:
+      'User Password': '{{ PLACEMENT_PASS }}'
+      'Repeat User Password': '{{ PLACEMENT_PASS }}'
+    timeout: 30
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Add the admin role to the placement user and service project
+  ansible.builtin.shell: |
+    openstack role add --project service --user placement admin
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the placement API entry in the service catalog
+  ansible.builtin.shell: |
+    openstack service create --name placement --description "Placement API" placement
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the public placement service API endpoint
+  ansible.builtin.shell: openstack endpoint create --region RegionOne placement public http://controller:8778 --format json
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+#  # We need to extract the endpoint ID in the placement installation
+#  register: _public_placement_service_api_endpoint
+
+#- name: Debug _public_placement_service_api_endpoint
+#  ansible.builtin.debug:
+#    msg: "{{ _public_placement_service_api_endpoint }}"
+
+- name: Create the internal placement service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne placement internal http://controller:8778
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Create the admin placement service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne placement admin http://controller:8778
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+...

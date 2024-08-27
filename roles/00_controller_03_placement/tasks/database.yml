@@ -1,0 +1,24 @@
+---
+
+- name: Create the placement database
+  community.mysql.mysql_db:
+    name: placement
+    state: present
+
+- name: Create user placement and give all permissions to placement from localhost
+  community.mysql.mysql_user:
+    name: placement
+    password: "{{ PLACEMENT_DBPASS }}"
+    priv: 'placement.*:ALL'
+    host: localhost
+    state: present
+
+- name: Create user placement and give all permissions to placement from %
+  community.mysql.mysql_user:
+    name: placement
+    password: "{{ PLACEMENT_DBPASS }}"
+    priv: 'placement.*:ALL'
+    host: '%'
+    state: present
+
+...
