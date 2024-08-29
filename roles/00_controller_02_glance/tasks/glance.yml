@@ -27,8 +27,8 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000" }
-    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
+    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
     - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
     - { section: "keystone_authtoken", option: "auth_type", value: "password" }
     - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
@@ -49,6 +49,19 @@
     - { section: "glance_store", option: "default_backend", value: "fs" }
     - { section: "fs", option: "filesystem_store_datadir", value: "/var/lib/glance/images/" }
 
+- name: Fetch the public image service
+  # Return value is an array with just one element, so we need to extract the first element
+  ansible.builtin.shell: |
+    openstack endpoint list --service glance --interface public --format json | jq -r '.[0]'
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  changed_when: false
+  # We need to extract the endpoint ID in the glance installation
+  register: _public_image_service_api_endpoint
+
 - name: Configure oslo section access to keystone
   ansible.builtin.ini_file:
     path: /etc/glance/glance-api.conf
@@ -56,13 +69,13 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "oslo_limit", option: "auth_url", value: "http://controller:5000" }
+    - { section: "oslo_limit", option: "auth_url", value: "http://controller:5000/" }
     - { section: "oslo_limit", option: "auth_type", value: "password" }
     - { section: "oslo_limit", option: "user_domain_id", value: "default" }
     - { section: "oslo_limit", option: "username", value: "glance" }
     - { section: "oslo_limit", option: "system_scope", value: "all" }
     - { section: "oslo_limit", option: "password", value: "{{ GLANCE_PASS }}" }
-    - { section: "oslo_limit", option: "endpoint_id", value: "{{ _public_image_service_api_endpoint.stdout|from_json|json_query('id') }}" }
+    - { section: "oslo_limit", option: "endpoint_id", value: "{{ _public_image_service_api_endpoint.stdout|from_json|json_query('ID') }}" }
     - { section: "oslo_limit", option: "region_name", value: "RegionOne" }
 
 - name: Configure enable tenant quotas
@@ -78,10 +91,12 @@
   ansible.builtin.shell: su -s /bin/sh -c "glance-manage db_sync" glance
   args:
     executable: /bin/bash
+    creates: /var/lib/mysql/glance/alembic_version.ibd
 
 - name: Restart glance
   ansible.builtin.systemd:
     name: glance-api.service
     state: restarted
+  changed_when: false
 
 ...

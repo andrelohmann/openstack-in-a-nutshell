@@ -7,68 +7,126 @@
       'User Password': '{{ GLANCE_PASS }}'
       'Repeat User Password': '{{ GLANCE_PASS }}'
     timeout: 30
+    creates: /opt/os-deployment-progress/glance-user
   become: true
   become_user: admin-os
   become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/glance-user for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-user
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Add the admin role to the glance user and service project
   ansible.builtin.shell: |
     openstack role add --project service --user glance admin
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/glance-admin
   become: true
   become_user: admin-os
   become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/glance-admin for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-admin
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Make sure that the glance account has reader access to system-scope resources
   ansible.builtin.shell: |
     openstack role add --user glance --user-domain Default --system all reader
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/glance-reader
   become: true
   become_user: admin-os
   become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/glance-reader for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-reader
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Create the glance service entity
   ansible.builtin.shell: |
     openstack service create --name glance --description "OpenStack Image" image
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/glance-image
   become: true
   become_user: admin-os
   become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/glance-image for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-image
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Create the public Image service API endpoint
-  ansible.builtin.shell: openstack endpoint create --region RegionOne image public http://controller:9292 --format json
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne image public http://controller:9292
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/glance-endpoint-public
   become: true
   become_user: admin-os
   become_flags: -i
-  # We need to extract the endpoint ID in the glance installation
-  register: _public_image_service_api_endpoint
 
-- name: Debug _public_image_service_api_endpoint
-  ansible.builtin.debug:
-    msg: "{{ _public_image_service_api_endpoint }}"
+- name: Touch /opt/os-deployment-progress/glance-endpoint-public for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-endpoint-public
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Create the internal Image service API endpoint
   ansible.builtin.shell: |
     openstack endpoint create --region RegionOne image internal http://controller:9292
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/glance-endpoint-internal
   become: true
   become_user: admin-os
   become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/glance-endpoint-internal for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-endpoint-internal
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Create the admin Image service API endpoint
   ansible.builtin.shell: |
     openstack endpoint create --region RegionOne image admin http://controller:9292
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/glance-endpoint-admin
   become: true
   become_user: admin-os
   become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/glance-endpoint-admin for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-endpoint-admin
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Register quota limits
   ansible.builtin.shell: |
@@ -78,8 +136,17 @@
     openstack registered limit create --service glance --default-limit 100 --region RegionOne image_count_uploading
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/glance-quotas
   become: true
   become_user: admin-os
   become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/glance-quotas for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/glance-quotas
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 ...

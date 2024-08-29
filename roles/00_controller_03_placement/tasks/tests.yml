@@ -1,0 +1,45 @@
+---
+
+- name: Perform status checks
+  ansible.builtin.shell: |
+    placement-status upgrade check
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _placement_status_check
+
+- name: Echo _placement_status_check
+  ansible.builtin.debug:
+    msg: "{{ _placement_status_check }}"
+
+- name: List available resources
+  ansible.builtin.shell: |
+    openstack --os-placement-api-version 1.2 resource class list --sort-column name
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _placement_resources_list
+
+- name: Echo _placement_resources_list
+  ansible.builtin.debug:
+    msg: "{{ _placement_resources_list }}"
+
+- name: List available traits
+  ansible.builtin.shell: |
+    openstack --os-placement-api-version 1.6 trait list --sort-column name
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _placement_traits_list
+
+- name: Echo _placement_traits_list
+  ansible.builtin.debug:
+    msg: "{{ _placement_traits_list }}"
+
+...

@@ -1,0 +1,44 @@
+---
+
+- name: Install horizon packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - openstack-dashboard
+
+# # Replace
+# OPENSTACK_HOST = "controller"
+# OPENSTACK_KEYSTONE_URL = "http://%s:5000/identity/v3" % OPENSTACK_HOST
+#
+# TIME_ZONE = "Europe/Berlin"
+#
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+#         'LOCATION': 'controller:11211',
+#     },
+# }
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+#
+# # Add
+# OPENSTACK_API_VERSIONS = {
+#     "identity": 3,
+#     "image": 2,
+#     "volume": 3,
+# }
+# OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = "Default"
+# OPENSTACK_KEYSTONE_DEFAULT_ROLE = "user"
+
+- name: Restart apache2
+  ansible.builtin.systemd:
+    name: apache2
+    state: restarted
+
+...

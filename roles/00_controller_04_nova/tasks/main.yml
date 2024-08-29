@@ -13,7 +13,8 @@
 - name: Install nova
   ansible.builtin.include_tasks: nova.yml
 
-#- name: Validate nova
-#  ansible.builtin.include_tasks: commands.yml
+- name: Validate nova
+  ansible.builtin.include_tasks: tests.yml
+  when: RUN_TESTS
 
 ...

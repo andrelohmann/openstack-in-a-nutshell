@@ -3,6 +3,7 @@
 collections:
 - community.mysql
 - community.general
+- community.rabbitmq
 - ansible.posix
 
 ...

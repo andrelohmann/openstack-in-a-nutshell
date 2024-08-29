@@ -96,12 +96,12 @@
     value: "{{ item.value }}"
   with_items:
     - { section: "service_user", option: "send_service_user_token", value: "true" }
-    - { section: "service_user", option: "auth_url", value: "https://controller/identity" }
+    - { section: "service_user", option: "auth_url", value: "http://controller/identity" }
     - { section: "service_user", option: "auth_strategy", value: "keystone" }
     - { section: "service_user", option: "auth_type", value: "password" }
     - { section: "service_user", option: "project_domain_name", value: "Default" }
-    - { section: "service_user", option: "project_name", value: "service" }
     - { section: "service_user", option: "user_domain_name", value: "Default" }
+    - { section: "service_user", option: "project_name", value: "service" }
     - { section: "service_user", option: "username", value: "nova" }
     - { section: "service_user", option: "password", value: "{{ NOVA_PASS }}" }
 
@@ -132,6 +132,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
+    # API Servers is a deprecated option
     - { section: "glance", option: "api_servers", value: "http://controller:9292" }
 
 - name: Configure oslo concurrency
@@ -152,9 +153,9 @@
   with_items:
     - { section: "placement", option: "region_name", value: "RegionOne" }
     - { section: "placement", option: "project_domain_name", value: "Default" }
+    - { section: "placement", option: "user_domain_name", value: "Default" }
     - { section: "placement", option: "project_name", value: "service" }
     - { section: "placement", option: "auth_type", value: "password" }
-    - { section: "placement", option: "user_domain_name", value: "Default" }
     - { section: "placement", option: "auth_url", value: "http://controller:5000/v3" }
     - { section: "placement", option: "username", value: "placement" }
     - { section: "placement", option: "password", value: "{{ PLACEMENT_PASS }}" }
@@ -163,40 +164,64 @@
   ansible.builtin.shell: su -s /bin/sh -c "nova-manage api_db sync" nova
   args:
     executable: /bin/bash
+    creates: /var/lib/mysql/nova_api/alembic_version.ibd
 
 - name: Register the cell0 database
   ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/nova-cell-mappings
+
+- name: Touch /opt/os-deployment-progress/nova-cell-mappings for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-cell-mappings
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Create the cell1 cell
   ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/nova-cell-create
+
+- name: Touch /opt/os-deployment-progress/nova-cell-create for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-cell-create
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Populate the nova database
   ansible.builtin.shell: su -s /bin/sh -c "nova-manage db sync" nova
   args:
     executable: /bin/bash
+    creates: /var/lib/mysql/nova/alembic_version.ibd
 
 - name: Restart nova-api
   ansible.builtin.systemd:
     name: nova-api.service
     state: restarted
+  changed_when: false
 
 - name: Restart nova-scheduler
   ansible.builtin.systemd:
     name: nova-scheduler.service
     state: restarted
+  changed_when: false
 
 - name: Restart nova-conductor
   ansible.builtin.systemd:
     name: nova-conductor.service
     state: restarted
+  changed_when: false
 
 - name: Restart nova-novncproxy
   ansible.builtin.systemd:
     name: nova-novncproxy.service
     state: restarted
+  changed_when: false
 
 ...

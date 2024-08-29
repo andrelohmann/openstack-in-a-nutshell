@@ -14,37 +14,47 @@
     - keystone
 
 - name: Configure keystone connection
-  ansible.builtin.lineinfile:
+  ansible.builtin.ini_file:
     path: /etc/keystone/keystone.conf
-    regexp: '^connection = sqlite'
-    insertafter: '^[database]'
-    line: "connection = mysql+pymysql://keystone:{{ KEYSTONE_DBPASS }}@controller/keystone"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "database", option: "connection", value: "mysql+pymysql://keystone:{{ KEYSTONE_DBPASS }}@controller/keystone" }
 
-- name: Configure keystone rabbitmq
-  ansible.builtin.lineinfile:
+- name: Configure rabbitmq access
+  ansible.builtin.ini_file:
     path: /etc/keystone/keystone.conf
-    regexp: '^transport_url = rabbit://'
-    insertafter: '^#transport_url = rabbit://'
-    line: "transport_url = rabbit://openstack:{{ RABBIT_PASS }}@controller:5672//"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
 
 - name: Configure keystone token provider
-  ansible.builtin.lineinfile:
+  ansible.builtin.ini_file:
     path: /etc/keystone/keystone.conf
-    regexp: '^provider = '
-    insertafter: '^#provider = fernet'
-    line: provider = fernet
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "receipt", option: "provider", value: "fernet" }
 
 - name: Configure keystone memcached
-  ansible.builtin.lineinfile:
+  ansible.builtin.ini_file:
     path: /etc/keystone/keystone.conf
-    regexp: '^memcache_servers = controller'
-    insertafter: '^#memcache_servers = controller'
-    line: memcache_servers = controller:11211
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "cache", option: "memcache_servers", value: "controller:11211" }
 
 - name: Initialize the database
   ansible.builtin.shell: su -s /bin/sh -c "keystone-manage db_sync" keystone
   args:
     executable: /bin/bash
+    # creates: /var/log/keystone/keystone-manage.log
+    creates: /var/lib/mysql/keystone/alembic_version.ibd
 
 - name: Initialize Fernet key repositories
   ansible.builtin.shell: |
@@ -52,6 +62,7 @@
     keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
   args:
     executable: /bin/bash
+    creates: /etc/keystone/fernet-keys/0
 
 - name: Bootstrap the Identity service
   ansible.builtin.shell: |
@@ -62,6 +73,15 @@
     --bootstrap-region-id RegionOne
   args:
     executable: /bin/bash
+    creates: /opt/os-deployment-progress/keystone-bootstrap
+
+- name: Touch /opt/os-deployment-progress/keystone-bootstrap for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/keystone-bootstrap
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
 
 - name: Configure apache2.conf
   ansible.builtin.lineinfile:

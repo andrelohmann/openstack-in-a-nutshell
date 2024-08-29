@@ -34,5 +34,6 @@
     name: etcd.service
     enabled: true
     state: restarted
+  changed_when: false
 
 ...

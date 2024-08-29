@@ -10,7 +10,11 @@
 - name: Install keystone
   ansible.builtin.include_tasks: keystone.yml
 
-- name: Create a domain, projects, users, and roles
+- name: Create necessary resources
   ansible.builtin.include_tasks: commands.yml
+
+- name: Create a domain, projects, users, and roles
+  ansible.builtin.include_tasks: tests.yml
+  when: RUN_TESTS
 
 ...

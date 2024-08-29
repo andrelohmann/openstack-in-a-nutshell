@@ -34,7 +34,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "DEFAULT", option: "core_plugin", value: "rml2" }
+    - { section: "DEFAULT", option: "core_plugin", value: "ml2" }
     - { section: "DEFAULT", option: "service_plugins", value: "router" }
 
 - name: Configure rabbitmq access
@@ -54,8 +54,8 @@
     value: "{{ item.value }}"
   with_items:
     - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
-    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000" }
-    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
+    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
     - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
     - { section: "keystone_authtoken", option: "auth_type", value: "password" }
     - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
@@ -108,7 +108,7 @@
   with_items:
     - { section: "DEFAULT", option: "notify_nova_on_port_status_changes", value: "true" }
     - { section: "DEFAULT", option: "notify_nova_on_port_data_changes", value: "true" }
-    - { section: "nova", option: "auth_url", value: "http://controller:5000" }
+    - { section: "nova", option: "auth_url", value: "http://controller:5000/" }
     - { section: "nova", option: "auth_type", value: "password" }
     - { section: "nova", option: "project_domain_name", value: "Default" }
     - { section: "nova", option: "user_domain_name", value: "Default" }
@@ -208,7 +208,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "neutron", option: "auth_url", value: "http://controller:5000" }
+    - { section: "neutron", option: "auth_url", value: "http://controller:5000/" }
     - { section: "neutron", option: "auth_type", value: "password" }
     - { section: "neutron", option: "project_domain_name", value: "Default" }
     - { section: "neutron", option: "user_domain_name", value: "Default" }
@@ -223,35 +223,42 @@
   ansible.builtin.shell: su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
   args:
     executable: /bin/bash
+    creates: /var/lib/mysql/neutron/alembic_version.ibd
 
 - name: Restart nova-api
   ansible.builtin.systemd:
     name: nova-api.service
     state: restarted
+  changed_when: false
 
 - name: Restart neutron-server
   ansible.builtin.systemd:
     name: neutron-server.service
     state: restarted
+  changed_when: false
 
 - name: Restart neutron-openvswitch-agent
   ansible.builtin.systemd:
     name: neutron-openvswitch-agent.service
     state: restarted
+  changed_when: false
 
 - name: Restart neutron-dhcp-agent
   ansible.builtin.systemd:
     name: neutron-dhcp-agent.service
     state: restarted
+  changed_when: false
 
 - name: Restart neutron-metadata-agent
   ansible.builtin.systemd:
     name: neutron-metadata-agent.service
     state: restarted
+  changed_when: false
 
 - name: Restart neutron-l3-agent
   ansible.builtin.systemd:
     name: neutron-l3-agent.service
     state: restarted
+  changed_when: false
 
 ...

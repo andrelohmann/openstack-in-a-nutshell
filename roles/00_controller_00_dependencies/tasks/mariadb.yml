@@ -23,10 +23,12 @@
   ansible.builtin.systemd:
     name: mariadb.service
     state: restarted
+  changed_when: false
 
 - name: Secure mariadb
   ansible.builtin.expect:
-    command: mysql_secure_installation
+    command: |
+      mysql_secure_installation
     responses:
       'Enter current password for root': ''
       'Switch to unix_socket authentication': 'n'

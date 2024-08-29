@@ -77,6 +77,29 @@ export OS_IDENTITY_API_VERSION=3
 export OS_IMAGE_API_VERSION=2
 ```
 
+Cheat Sheet
+
+```
+openstack command list
+openstack catalog list
+openstack catalog show keystone
+openstack configuration show
+openstack versions show
+openstack service list
+openstack service show keystone
+```
+
+General resources overview
+
+```
+openstack project list
+openstack domain list
+openstack user list
+openstack quota list --compute
+openstack quota list --volume
+openstack quota list --network
+```
+
 Create project for services
 
 ```
@@ -212,6 +235,34 @@ The self-service networking option is chosen by default
 ##### Test
 
 Verify neutron
+
+```
+?
+```
+
+#### cinder
+
+Install cinder - the OpenStack block-storage service
+
+* https://docs.openstack.org/cinder/2024.1/install/index-ubuntu.html
+
+##### Test
+
+Verify cinder
+
+```
+?
+```
+
+#### horizon
+
+Install horizon - the OpenStack dashboard service
+
+* https://docs.openstack.org/horizon/2024.1/install/install-debian.html
+
+##### Test
+
+Verify horizon
 
 ```
 ?

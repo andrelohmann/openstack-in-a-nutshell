@@ -38,6 +38,7 @@
     vars:
       packages:
       - curl
+      - jq
 
   - name: Install cloud-archive:caracal
     command: add-apt-repository cloud-archive:caracal -y
@@ -53,9 +54,7 @@
   - 00_controller_03_placement
   - 00_controller_04_nova
   - 00_controller_05_neutron
+  - 00_controller_06_cinder
+  - 00_controller_07_horizon
 
-  tasks:
-
-  - name: Debug
-    ansible.builtin.debug:
-      msg: "Task"
+...

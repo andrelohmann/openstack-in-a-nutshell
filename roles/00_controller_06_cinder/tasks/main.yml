@@ -10,10 +10,10 @@
 - name: Run prerequisites
   ansible.builtin.include_tasks: prerequisites.yml
 
-- name: Install neutron
-  ansible.builtin.include_tasks: neutron.yml
+- name: Install cinder
+  ansible.builtin.include_tasks: cinder.yml
 
-#- name: Validate neutron
+#- name: Validate cinder
 #  ansible.builtin.include_tasks: tests.yml
 #  when: RUN_TESTS
 

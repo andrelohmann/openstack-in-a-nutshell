@@ -16,4 +16,8 @@
 - name: Validate placement
   ansible.builtin.include_tasks: commands.yml
 
+- name: Perform status checks and list resources
+  ansible.builtin.include_tasks: tests.yml
+  when: RUN_TESTS
+
 ...

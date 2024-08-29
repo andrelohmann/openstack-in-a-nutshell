@@ -15,11 +15,13 @@
     - python3-osc-placement
 
 - name: Configure placement connection
-  ansible.builtin.lineinfile:
+  ansible.builtin.ini_file:
     path: /etc/placement/placement.conf
-    regexp: '^connection = sqlite'
-    insertafter: '^[database]'
-    line: "connection = mysql+pymysql://placement:{{ PLACEMENT_DBPASS }}@controller/placement"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "placement_database", option: "connection", value: "mysql+pymysql://placement:{{ PLACEMENT_DBPASS }}@controller/placement" }
 
 - name: Configure Identity service access
   ansible.builtin.ini_file:
@@ -29,7 +31,8 @@
     value: "{{ item.value }}"
   with_items:
     - { section: "api", option: "auth_strategy", value: "keystone" }
-    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/v3" }
+    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
+    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
     - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
     - { section: "keystone_authtoken", option: "auth_type", value: "password" }
     - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
@@ -42,10 +45,12 @@
   ansible.builtin.shell: su -s /bin/sh -c "placement-manage db sync" placement
   args:
     executable: /bin/bash
+    creates: /var/lib/mysql/placement/alembic_version.ibd
 
 - name: Restart apache2
   ansible.builtin.systemd:
     name: apache2.service
     state: restarted
+  changed_when: false
 
 ...

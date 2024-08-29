@@ -38,6 +38,7 @@
     vars:
       packages:
       - curl
+      - jq
 
   - name: Install cloud-archive:caracal
     command: add-apt-repository cloud-archive:caracal -y
