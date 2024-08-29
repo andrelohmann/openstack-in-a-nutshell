@@ -10,24 +10,72 @@ Just clone the repo and run
 vagrant up
 ```
 
+If your hardware does not fulfill the requirements in config.yml, you can create a config_override.yml to override some of the values.
+
 During the installation, you will be asked several things:
 
 * Install vagrant-hostmanager plugin
 * Select the network interface, that is connected to the internet
 * Give Root password for the hostmanager plugin
 
+After the installation has finished, you can open the Dashboard
+
+* http://controller.os.lokal/horizon/
+
+Login:
+
+* admin
+* qwertz
+
 ## Useful links and
 
-* https://www.youtube.com/watch?v=wsy9OY-ot7E
-* https://www.youtube.com/watch?v=mCiyTsMvnko
-* https://docs.openstack.org/install-guide/index.html
-* https://docs.openstack.org/install-guide/openstack-services.html
-* https://docs.openstack.org/de/install-guide/environment-packages-ubuntu.html
-* https://docs.openstack.org/python-openstackclient/latest/
-* https://www.openstack.org/use-cases/enterprise/
-* https://docs.openstack.org/python-openstackclient/2024.1/´
+* [Running OpenStack in Production](https://www.youtube.com/watch?v=wsy9OY-ot7E)
+* Installing a Minimal Openstack from scratch
+  * [Keystone](https://www.youtube.com/watch?v=mCiyTsMvnko)
+  * [Glance](https://www.youtube.com/watch?v=UvgMak7DQ9Q)
+  * [Horizon and Cinder](https://www.youtube.com/watch?v=sOm6nha-6aQ)
+  * [Placement and Nova](https://www.youtube.com/watch?v=ySTNN9gB-Nw)
+  * [Neutron](https://www.youtube.com/watch?v=eLJ26JMmi-U)
+  * [Compute node](https://www.youtube.com/watch?v=7AFe6RPWdqg)
+  * [Testing the cluster](https://www.youtube.com/watch?v=0iILJ2tYKc8)
+* Installing Ceph (for later improvement of the Blockstorage Component)
+  * [Ceph Cluster Backbone](https://www.youtube.com/watch?v=LxDQyFWDNHI)
+  * [Ceph Add OSDs](https://www.youtube.com/watch?v=JLBflREMs2k)
+* OpenStack Documentations
+  * [Hardware Requirements](https://docs.openstack.org/install-guide/overview.html)
+  * [Network self-service](https://docs.openstack.org/install-guide/launch-instance-networks-selfservice.html)
+  * [Minimal Installation guide](https://docs.openstack.org/install-guide/openstack-services.html)
+  * [Minimal Installation Prerequesites](https://docs.openstack.org/de/install-guide/environment-packages-ubuntu.html)
+  * [Full Installation guide](https://docs.openstack.org/install-guide/index.html)
+  * [openstack client](https://docs.openstack.org/python-openstackclient/2024.1/)
+  * [A guide to applications on openstack](https://www.openstack.org/use-cases/enterprise/)
+  * [High Availability](https://docs.openstack.org/arch-design/arch-requirements/arch-requirements-ha.html)
+  * [Software and Components overview](https://www.openstack.org/software/)
 
 ## Network
+
+@startuml
+!include <office/Servers/application_server>
+!include <office/Servers/database_server>
+
+nwdiag {
+  network dmz {
+      address = "210.x.x.x/24"
+
+      // set multiple addresses (using comma)
+      web01 [address = "210.x.x.1, 210.x.x.20",  description = "<$application_server>\n web01"]
+      web02 [address = "210.x.x.2",  description = "<$application_server>\n web02"];
+  }
+  network internal {
+      address = "172.x.x.x/24";
+
+      web01 [address = "172.x.x.1"];
+      web02 [address = "172.x.x.2"];
+      db01 [address = "172.x.x.100",  description = "<$database_server>\n db01"];
+      db02 [address = "172.x.x.101",  description = "<$database_server>\n db02"];
+  }
+}
+@enduml
 
 The simple [Host Networking](https://docs.openstack.org/install-guide/environment-networking.html) Stack is chosen, which consists of a management and a provider network. There are two options available, provider network and self-service network. The ansible role, installing neutron, is configured to deploy the self-service network option.
 

@@ -5,29 +5,33 @@ configs:
     controller:
       memory: "4096"
       cpus: "2"
-      disk_size: "10GB"
+      disk_size: "20GB"
       internal_ip: "10.0.0.11"
       domain: controller
       aliases:
       - controller.os.lokal
     compute1:
-      memory: "512"
-      cpus: "1"
-      disk_size: "10GB"
+      memory: "8192"
+      cpus: "4"
+      disk_size: "100GB"
       internal_ip: "10.0.0.21"
       domain: compute1
       aliases:
       - compute1.os.lokal
     block1:
-      memory: "1024"
+      memory: "2048"
       cpus: "2"
+      disk_size: "20GB"
+      storage_disk_size: "100GB"
       internal_ip: "10.0.0.31"
       domain: block1
       aliases:
       - block1.os.lokal
     object1:
-      memory: "1024"
+      memory: "2048"
       cpus: "2"
+      disk_size: "20GB"
+      storage_disk_size: "100GB"
       internal_ip: "10.0.0.41"
       domain: object1
       aliases:

@@ -13,32 +13,77 @@
     packages:
     - openstack-dashboard
 
-# # Replace
-# OPENSTACK_HOST = "controller"
-# OPENSTACK_KEYSTONE_URL = "http://%s:5000/identity/v3" % OPENSTACK_HOST
-#
-# TIME_ZONE = "Europe/Berlin"
-#
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
-#         'LOCATION': 'controller:11211',
-#     },
-# }
-# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-#
-# # Add
-# OPENSTACK_API_VERSIONS = {
-#     "identity": 3,
-#     "image": 2,
-#     "volume": 3,
-# }
-# OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = "Default"
-# OPENSTACK_KEYSTONE_DEFAULT_ROLE = "user"
+- name: Configure OPENSTACK_HOST
+  ansible.builtin.lineinfile:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: '^OPENSTACK_HOST'
+    insertafter: '^#OPENSTACK_HOST'
+    line: 'OPENSTACK_HOST = "controller"'
+
+- name: Configure OPENSTACK_KEYSTONE_URL
+  ansible.builtin.lineinfile:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: '^OPENSTACK_KEYSTONE_URL'
+    insertafter: '^#OPENSTACK_KEYSTONE_URL'
+    line: 'OPENSTACK_KEYSTONE_URL = "http://%s:5000/identity/v3" % OPENSTACK_HOST'
+
+- name: Configure TIME_ZONE
+  ansible.builtin.lineinfile:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: '^TIME_ZONE'
+    insertafter: '^#TIME_ZONE'
+    line: 'TIME_ZONE = "Europe/Berlin"'
+
+- name: Configure SESSION_ENGINE
+  ansible.builtin.lineinfile:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: '^SESSION_ENGINE'
+    insertafter: '^#SESSION_ENGINE'
+    line: 'TIME_ZONE = "Europe/Berlin"'
+
+- name: Configure CACHES
+  ansible.builtin.replace:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: >-
+      (?s)(^CACHES = {).*?(\n})$
+    replace: |
+      CACHES = {
+          'default': {
+              'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+              'LOCATION': 'controller:11211',
+          },
+      }
+
+- name: Configure OPENSTACK_KEYSTONE_DEFAULT_DOMAIN
+  ansible.builtin.lineinfile:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: '^OPENSTACK_KEYSTONE_DEFAULT_DOMAIN'
+    insertafter: '^#OPENSTACK_KEYSTONE_DEFAULT_DOMAIN'
+    line: 'OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = "Default"'
+
+- name: Configure OPENSTACK_KEYSTONE_DEFAULT_ROLE
+  ansible.builtin.lineinfile:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: '^OPENSTACK_KEYSTONE_DEFAULT_ROLE'
+    insertafter: '^#OPENSTACK_KEYSTONE_DEFAULT_ROLE'
+    line: 'OPENSTACK_KEYSTONE_DEFAULT_ROLE = "user"'
+
+- name: Configure OPENSTACK_API_VERSIONS
+  ansible.builtin.replace:
+    path: /etc/openstack-dashboard/local_settings.py
+    regexp: >-
+      (?s)(^OPENSTACK_API_VERSIONS = {).*?(\n})$
+    replace: |
+      OPENSTACK_API_VERSIONS = {
+          "identity": 3,
+          "image": 2,
+          "volume": 3,
+      }
 
 - name: Restart apache2
   ansible.builtin.systemd:
     name: apache2
     state: restarted
+  changed_when: false
 
 ...
