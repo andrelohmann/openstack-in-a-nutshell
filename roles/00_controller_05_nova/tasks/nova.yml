@@ -160,6 +160,33 @@
     - { section: "placement", option: "username", value: "placement" }
     - { section: "placement", option: "password", value: "{{ PLACEMENT_PASS }}" }
 
+- name: Configure neutron
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "neutron", option: "auth_url", value: "http://controller:5000/" }
+    - { section: "neutron", option: "auth_type", value: "password" }
+    - { section: "neutron", option: "project_domain_name", value: "Default" }
+    - { section: "neutron", option: "user_domain_name", value: "Default" }
+    - { section: "neutron", option: "region_name", value: "RegionOne" }
+    - { section: "neutron", option: "project_name", value: "service" }
+    - { section: "neutron", option: "username", value: "neutron" }
+    - { section: "neutron", option: "password", value: "{{ NEUTRON_PASS }}" }
+    - { section: "neutron", option: "service_metadata_proxy", value: "true" }
+    - { section: "neutron", option: "metadata_proxy_shared_secret", value: "{{ METADATA_SECRET }}" }
+
+- name: Configure automatic compute node discovery
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "scheduler", option: "discover_hosts_in_cells_interval", value: "300" }
+
 - name: Initialize the nova-api database
   ansible.builtin.shell: su -s /bin/sh -c "nova-manage api_db sync" nova
   args:

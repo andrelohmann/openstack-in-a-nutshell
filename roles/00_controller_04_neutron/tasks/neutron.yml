@@ -201,35 +201,11 @@
     - { section: "DEFAULT", option: "nova_metadata_host", value: "controller" }
     - { section: "DEFAULT", option: "metadata_proxy_shared_secret", value: "{{ METADATA_SECRET }}" }
 
-- name: Configure the Compute service to use the Networking service
-  ansible.builtin.ini_file:
-    path: /etc/nova/nova.conf
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-    - { section: "neutron", option: "auth_url", value: "http://controller:5000/" }
-    - { section: "neutron", option: "auth_type", value: "password" }
-    - { section: "neutron", option: "project_domain_name", value: "Default" }
-    - { section: "neutron", option: "user_domain_name", value: "Default" }
-    - { section: "neutron", option: "region_name", value: "RegionOne" }
-    - { section: "neutron", option: "project_name", value: "service" }
-    - { section: "neutron", option: "username", value: "neutron" }
-    - { section: "neutron", option: "password", value: "{{ NEUTRON_PASS }}" }
-    - { section: "neutron", option: "service_metadata_proxy", value: "true" }
-    - { section: "neutron", option: "metadata_proxy_shared_secret", value: "{{ METADATA_SECRET }}" }
-
 - name: Populate the neutron database
   ansible.builtin.shell: su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
   args:
     executable: /bin/bash
     creates: /var/lib/mysql/neutron/alembic_version.ibd
-
-- name: Restart nova-api
-  ansible.builtin.systemd:
-    name: nova-api.service
-    state: restarted
-  changed_when: false
 
 - name: Restart neutron-server
   ansible.builtin.systemd:
