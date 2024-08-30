@@ -2,7 +2,7 @@
 
 - name: Debug
   ansible.builtin.debug:
-    msg: "Installing Controllernode Dependencies"
+    msg: "Installing Controller node Dependencies"
 
 - name: Create openstack admin user
   ansible.builtin.include_tasks: admin-user.yml

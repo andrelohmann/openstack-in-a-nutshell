@@ -4,9 +4,6 @@
   ansible.builtin.debug:
     msg: "Installing Cinder - the OpenStack Block Storage Service"
 
-- name: Create database
-  ansible.builtin.include_tasks: database.yml
-
 - name: Run prerequisites
   ansible.builtin.include_tasks: prerequisites.yml
 

@@ -27,16 +27,16 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
-    - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
-    - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
-    - { section: "keystone_authtoken", option: "auth_type", value: "password" }
-    - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
-    - { section: "keystone_authtoken", option: "user_domain_name", value: "Default" }
-    - { section: "keystone_authtoken", option: "project_name", value: "service" }
-    - { section: "keystone_authtoken", option: "username", value: "glance" }
-    - { section: "keystone_authtoken", option: "password", value: "{{ GLANCE_PASS }}" }
-    - { section: "paste_deploy", option: "flavor", value: "keystone" }
+  - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
+  - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
+  - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
+  - { section: "keystone_authtoken", option: "auth_type", value: "password" }
+  - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "user_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "project_name", value: "service" }
+  - { section: "keystone_authtoken", option: "username", value: "glance" }
+  - { section: "keystone_authtoken", option: "password", value: "{{ GLANCE_PASS }}" }
+  - { section: "paste_deploy", option: "flavor", value: "keystone" }
 
 - name: Configure the local file system store and location of image files
   ansible.builtin.ini_file:
@@ -45,9 +45,9 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "DEFAULT", option: "enabled_backends", value: "fs:file" }
-    - { section: "glance_store", option: "default_backend", value: "fs" }
-    - { section: "fs", option: "filesystem_store_datadir", value: "/var/lib/glance/images/" }
+  - { section: "DEFAULT", option: "enabled_backends", value: "fs:file" }
+  - { section: "glance_store", option: "default_backend", value: "fs" }
+  - { section: "fs", option: "filesystem_store_datadir", value: "/var/lib/glance/images/" }
 
 - name: Fetch the public image service
   # Return value is an array with just one element, so we need to extract the first element
@@ -69,14 +69,14 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "oslo_limit", option: "auth_url", value: "http://controller:5000/" }
-    - { section: "oslo_limit", option: "auth_type", value: "password" }
-    - { section: "oslo_limit", option: "user_domain_id", value: "default" }
-    - { section: "oslo_limit", option: "username", value: "glance" }
-    - { section: "oslo_limit", option: "system_scope", value: "all" }
-    - { section: "oslo_limit", option: "password", value: "{{ GLANCE_PASS }}" }
-    - { section: "oslo_limit", option: "endpoint_id", value: "{{ _public_image_service_api_endpoint.stdout|from_json|json_query('ID') }}" }
-    - { section: "oslo_limit", option: "region_name", value: "RegionOne" }
+  - { section: "oslo_limit", option: "auth_url", value: "http://controller:5000/" }
+  - { section: "oslo_limit", option: "auth_type", value: "password" }
+  - { section: "oslo_limit", option: "user_domain_id", value: "default" }
+  - { section: "oslo_limit", option: "username", value: "glance" }
+  - { section: "oslo_limit", option: "system_scope", value: "all" }
+  - { section: "oslo_limit", option: "password", value: "{{ GLANCE_PASS }}" }
+  - { section: "oslo_limit", option: "endpoint_id", value: "{{ _public_image_service_api_endpoint.stdout|from_json|json_query('ID') }}" }
+  - { section: "oslo_limit", option: "region_name", value: "RegionOne" }
 
 - name: Configure enable tenant quotas
   ansible.builtin.ini_file:

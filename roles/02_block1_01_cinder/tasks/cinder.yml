@@ -11,8 +11,8 @@
     cache_valid_time: 3600
   vars:
     packages:
-    - cinder-api
-    - cinder-scheduler
+    - cinder-volume
+    - tgt
 
 - name: Configure cinder connection
   ansible.builtin.ini_file:
@@ -31,6 +31,15 @@
     value: "{{ item.value }}"
   with_items:
   - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller" }
+
+- name: Configure glance api server
+  ansible.builtin.ini_file:
+    path: /etc/cinder/cinder.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "glance_api_servers", value: "http://controller:9292" }
 
 - name: Configure Identity service access
   ansible.builtin.ini_file:
@@ -92,7 +101,20 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-  - { section: "DEFAULT", option: "my_ip", value: "{{ MGT_IP_CONTROLLER }}" }
+  - { section: "DEFAULT", option: "my_ip", value: "{{ MGT_IP_BLOCK1 }}" }
+
+- name: Configure lvm backend
+  ansible.builtin.ini_file:
+    path: /etc/cinder/cinder.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "enabled_backends", value: "lvm" }
+  - { section: "lvm", option: "volume_driver", value: "cinder.volume.drivers.lvm.LVMVolumeDriver" }
+  - { section: "lvm", option: "volume_group", value: "cinder-volumes" }
+  - { section: "lvm", option: "target_protocol", value: "iscsi" }
+  - { section: "lvm", option: "target_helper", value: "tgtadm" }
 
 - name: Configure oslo concurrency
   ansible.builtin.ini_file:
@@ -101,38 +123,25 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-  - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/cinder/tmp" }
+    - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/cinder/tmp" }
 
-- name: Populate the cinder database
-  ansible.builtin.shell: su -s /bin/sh -c "cinder-manage db sync" cinder
-  args:
-    executable: /bin/bash
-    creates: /var/lib/mysql/cinder/alembic_version.ibd
+- name: Create /etc/tgt/conf.d/cinder.conf
+  ansible.builtin.copy:
+    src: cinder.conf
+    dest: /etc/tgt/conf.d/cinder.conf
+    owner: root
+    group: root
+    mode: '0644'
 
-- name: Configure Compute to use Block Storage
-  ansible.builtin.ini_file:
-    path: /etc/nova/nova.conf
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-  - { section: "cinder", option: "os_region_name", value: "RegionOne" }
-
-- name: Restart nova-api
+- name: Restart tgt
   ansible.builtin.systemd:
-    name: nova-api.service
+    name: tgt.service
     state: restarted
   changed_when: false
 
-- name: Restart cinder-scheduler
+- name: Restart cinder-volume
   ansible.builtin.systemd:
-    name: cinder-scheduler.service
-    state: restarted
-  changed_when: false
-
-- name: Restart apache2
-  ansible.builtin.systemd:
-    name: apache2.service
+    name: cinder-volume.service
     state: restarted
   changed_when: false
 

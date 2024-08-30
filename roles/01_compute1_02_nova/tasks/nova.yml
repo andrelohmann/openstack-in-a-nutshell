@@ -11,20 +11,7 @@
     cache_valid_time: 3600
   vars:
     packages:
-    - nova-api
-    - nova-conductor
-    - nova-novncproxy
-    - nova-scheduler
-
-- name: Configure nova connection
-  ansible.builtin.ini_file:
-    path: /etc/nova/nova.conf
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-  - { section: "api_database", option: "connection", value: "mysql+pymysql://nova:{{ NOVA_DBPASS }}@controller/nova_api" }
-  - { section: "database", option: "connection", value: "mysql+pymysql://nova:{{ NOVA_DBPASS }}@controller/nova" }
+    - nova-compute
 
 - name: Configure rabbitmq access
   ansible.builtin.ini_file:
@@ -105,14 +92,14 @@
   - { section: "service_user", option: "username", value: "nova" }
   - { section: "service_user", option: "password", value: "{{ NOVA_PASS }}" }
 
-- name: Configure management interface IP address of the controller node
+- name: Configure management interface IP address of the compute1 node
   ansible.builtin.ini_file:
     path: /etc/nova/nova.conf
     section: "{{ item.section }}"
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-  - { section: "DEFAULT", option: "my_ip", value: "{{ MGT_IP_CONTROLLER }}" }
+  - { section: "DEFAULT", option: "my_ip", value: "{{ MGT_IP_COMPUTE1 }}" }
 
 - name: Configure vnc
   ansible.builtin.ini_file:
@@ -124,6 +111,7 @@
   - { section: "vnc", option: "enabled", value: "true" }
   - { section: "vnc", option: "server_listen", value: "$my_ip" }
   - { section: "vnc", option: "server_proxyclient_address", value: "$my_ip" }
+  - { section: "vnc", option: "novncproxy_base_url", value: "http://controller:6080/vnc_auto.html" }
 
 - name: Configure glance
   ansible.builtin.ini_file:
@@ -178,76 +166,33 @@
   - { section: "neutron", option: "service_metadata_proxy", value: "true" }
   - { section: "neutron", option: "metadata_proxy_shared_secret", value: "{{ METADATA_SECRET }}" }
 
-- name: Configure automatic compute node discovery
+- name: Check for virtualization availability
+  ansible.builtin.shell: |
+    egrep -c '(vmx|svm)' /proc/cpuinfo
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+  # We need to extract the endpoint ID in the glance installation
+  register: _virt_available
+
+- name: Debug _virt_available
+  ansible.builtin.debug:
+    msg: "{{ _virt_available }}"
+
+- name: Configure libvirt if
   ansible.builtin.ini_file:
     path: /etc/nova/nova.conf
     section: "{{ item.section }}"
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-  - { section: "scheduler", option: "discover_hosts_in_cells_interval", value: "300" }
+  - { section: "libvirt", option: "virt_type", value: "qemu" }
+  #when: _virt_available.rc < 0
 
-- name: Initialize the nova-api database
-  ansible.builtin.shell: su -s /bin/sh -c "nova-manage api_db sync" nova
-  args:
-    executable: /bin/bash
-    creates: /var/lib/mysql/nova_api/alembic_version.ibd
-
-- name: Register the cell0 database
-  ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 map_cell0" nova
-  args:
-    executable: /bin/bash
-    creates: /opt/os-deployment-progress/nova-cell-mappings
-
-- name: Touch /opt/os-deployment-progress/nova-cell-mappings for idempotency
-  ansible.builtin.file:
-    path: /opt/os-deployment-progress/nova-cell-mappings
-    state: touch
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: Create the cell1 cell
-  ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 create_cell --name=cell1 --verbose" nova
-  args:
-    executable: /bin/bash
-    creates: /opt/os-deployment-progress/nova-cell-create
-
-- name: Touch /opt/os-deployment-progress/nova-cell-create for idempotency
-  ansible.builtin.file:
-    path: /opt/os-deployment-progress/nova-cell-create
-    state: touch
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: Populate the nova database
-  ansible.builtin.shell: su -s /bin/sh -c "nova-manage db sync" nova
-  args:
-    executable: /bin/bash
-    creates: /var/lib/mysql/nova/alembic_version.ibd
-
-- name: Restart nova-api
+- name: Restart nova-compute
   ansible.builtin.systemd:
-    name: nova-api.service
-    state: restarted
-  changed_when: false
-
-- name: Restart nova-scheduler
-  ansible.builtin.systemd:
-    name: nova-scheduler.service
-    state: restarted
-  changed_when: false
-
-- name: Restart nova-conductor
-  ansible.builtin.systemd:
-    name: nova-conductor.service
-    state: restarted
-  changed_when: false
-
-- name: Restart nova-novncproxy
-  ansible.builtin.systemd:
-    name: nova-novncproxy.service
+    name: nova-compute.service
     state: restarted
   changed_when: false
 

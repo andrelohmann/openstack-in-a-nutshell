@@ -11,12 +11,42 @@
     cache_valid_time: 3600
   vars:
     packages:
-    - neutron-server
-    - neutron-plugin-ml2
     - neutron-openvswitch-agent
-    - neutron-l3-agent
-    - neutron-dhcp-agent
-    - neutron-metadata-agent
+
+- name: Configure rabbitmq access
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
+
+- name: Configure oslo concurrency
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/neutron/tmp" }
+
+- name: Configure the Open vSwitch agent
+  ansible.builtin.ini_file:
+    path: /etc/neutron/plugins/ml2/openvswitch_agent.ini
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "ovs", option: "bridge_mappings", value: "provider:prvbr0" }
+  - { section: "ovs", option: "local_ip", value: "{{ MGT_IP_COMPUTE1 }}" }
+  - { section: "agent", option: "tunnel_types", value: "vxlan" }
+  - { section: "agent", option: "l2_population", value: "true" }
+  - { section: "securitygroup", option: "enable_security_group", value: "true" }
+  - { section: "securitygroup", option: "firewall_driver", value: "openvswitch" }
+
+
+
 
 - name: Configure neutron connection
   ansible.builtin.ini_file:
@@ -25,7 +55,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-  - { section: "database", option: "connection", value: "mysql+pymysql://neutron:{{ NEUTRON_DBPASS }}@controller/neutron" }
+    - { section: "database", option: "connection", value: "mysql+pymysql://neutron:{{ NEUTRON_DBPASS }}@controller/neutron" }
 
 - name: Enable the Modular Layer 2 (ML2) plug-in and router service
   ansible.builtin.ini_file:
@@ -36,15 +66,6 @@
   with_items:
   - { section: "DEFAULT", option: "core_plugin", value: "ml2" }
   - { section: "DEFAULT", option: "service_plugins", value: "router" }
-
-- name: Configure rabbitmq access
-  ansible.builtin.ini_file:
-    path: /etc/neutron/neutron.conf
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-  - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
 
 - name: Configure Identity service access
   ansible.builtin.ini_file:
@@ -140,20 +161,6 @@
   - { section: "ml2_type_flat", option: "flat_networks", value: "provider" }
   - { section: "ml2_type_vxlan", option: "vni_ranges", value: "1:1000" }
 
-- name: Configure the Open vSwitch agent
-  ansible.builtin.ini_file:
-    path: /etc/neutron/plugins/ml2/openvswitch_agent.ini
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-  - { section: "ovs", option: "bridge_mappings", value: "provider:prvbr0" }
-  - { section: "ovs", option: "local_ip", value: "{{ MGT_IP_CONTROLLER }}" }
-  - { section: "agent", option: "tunnel_types", value: "vxlan" }
-  - { section: "agent", option: "l2_population", value: "true" }
-  - { section: "securitygroup", option: "enable_security_group", value: "true" }
-  - { section: "securitygroup", option: "firewall_driver", value: "openvswitch" }
-
 - name: Set sysctl net.bridge.bridge-nf-call-ip(6)tables
   ansible.posix.sysctl:
     name: "{{ item }}"
@@ -171,69 +178,9 @@
     state: present
     persistent: present
 
-- name: Configure the layer-3 agent
-  ansible.builtin.ini_file:
-    path: /etc/neutron/l3_agent.ini
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-  - { section: "DEFAULT", option: "interface_driver", value: "openvswitch" }
-
-- name: Configure the DHCP agent
-  ansible.builtin.ini_file:
-    path: /etc/neutron/dhcp_agent.ini
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-  - { section: "DEFAULT", option: "interface_driver", value: "openvswitch" }
-  - { section: "DEFAULT", option: "dhcp_driver", value: "neutron.agent.linux.dhcp.Dnsmasq" }
-  - { section: "DEFAULT", option: "enable_isolated_metadata", value: "true" }
-
-- name: Configure the metadata agent
-  ansible.builtin.ini_file:
-    path: /etc/neutron/metadata_agent.ini
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-  with_items:
-  - { section: "DEFAULT", option: "nova_metadata_host", value: "controller" }
-  - { section: "DEFAULT", option: "metadata_proxy_shared_secret", value: "{{ METADATA_SECRET }}" }
-
-- name: Populate the neutron database
-  ansible.builtin.shell: su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
-  args:
-    executable: /bin/bash
-    creates: /var/lib/mysql/neutron/alembic_version.ibd
-
-- name: Restart neutron-server
-  ansible.builtin.systemd:
-    name: neutron-server.service
-    state: restarted
-  changed_when: false
-
 - name: Restart neutron-openvswitch-agent
   ansible.builtin.systemd:
     name: neutron-openvswitch-agent.service
-    state: restarted
-  changed_when: false
-
-- name: Restart neutron-dhcp-agent
-  ansible.builtin.systemd:
-    name: neutron-dhcp-agent.service
-    state: restarted
-  changed_when: false
-
-- name: Restart neutron-metadata-agent
-  ansible.builtin.systemd:
-    name: neutron-metadata-agent.service
-    state: restarted
-  changed_when: false
-
-- name: Restart neutron-l3-agent
-  ansible.builtin.systemd:
-    name: neutron-l3-agent.service
     state: restarted
   changed_when: false
 

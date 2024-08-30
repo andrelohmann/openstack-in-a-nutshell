@@ -10,7 +10,7 @@ Just clone the repo and run
 vagrant up
 ```
 
-If your hardware does not fulfill the requirements in config.yml, you can create a config_override.yml to override some of the values.
+If your hardware does not fulfill the requirements in config.yml, you can create a config.override.yml to override some of the values.
 
 During the installation, you will be asked several things:
 
@@ -54,28 +54,73 @@ Login:
 
 ## Network
 
-@startuml
-!include <office/Servers/application_server>
-!include <office/Servers/database_server>
+```mermaid
+  graph TD;
+      A-->B;
+      A-->C;
+      B-->D;
+      C-->D;
+```
 
-nwdiag {
-  network dmz {
-      address = "210.x.x.x/24"
+```mermaid
 
-      // set multiple addresses (using comma)
-      web01 [address = "210.x.x.1, 210.x.x.20",  description = "<$application_server>\n web01"]
-      web02 [address = "210.x.x.2",  description = "<$application_server>\n web02"];
-  }
-  network internal {
-      address = "172.x.x.x/24";
+graph TD;
 
-      web01 [address = "172.x.x.1"];
-      web02 [address = "172.x.x.2"];
-      db01 [address = "172.x.x.100",  description = "<$database_server>\n db01"];
-      db02 [address = "172.x.x.101",  description = "<$database_server>\n db02"];
-  }
-}
-@enduml
+    VPC[AWS VPC] --> |Public Subnet| PS1(Public Subnet 1);
+
+    VPC --> |Public Subnet| PS2(Public Subnet 2);
+
+    VPC --> |Private Subnet| PRS1(Private Subnet 1);
+
+    VPC --> |Private Subnet| PRS2(Private Subnet 2);
+
+
+
+    IGW(Internet Gateway) --> VPC;
+
+
+
+    PS1 --> RT1[Route Table: Public];
+
+    PS2 --> RT1;
+
+    PRS1 --> RT2[Route Table: Private];
+
+    PRS2 --> RT2;
+
+
+
+    NATGW1(NAT Gateway) --> PS1;
+
+    NATGW2(NAT Gateway) --> PS2;
+
+
+
+    RT1 --> IGW;
+
+    RT2 --> NATGW1;
+
+    RT2 --> NATGW2;
+
+
+
+    SG(Security Groups) -.-> |Inbound/Outbound Rules| VPC;
+
+    NACL(Network ACLs) -.-> |Inbound/Outbound Rules| VPC;
+
+    classDef aws fill:#f9f,stroke:#333,stroke-width:4px;
+
+    class VPC,PS1,PS2,PRS1,PRS2,IGW,NATGW1,NATGW2,RT1,RT2,SG,NACL aws;
+
+    click VPC "https://github.com/aws-quickstart/quickstart-aws-vpc" "AWS VPC" _blank
+
+    click PS1 "https://github.com/yurymkomarov/terraform-aws-vpc-public-private" "Public Subnet" _blank
+
+```
+
+```puml {align="center"}
+a->b
+```
 
 The simple [Host Networking](https://docs.openstack.org/install-guide/environment-networking.html) Stack is chosen, which consists of a management and a provider network. There are two options available, provider network and self-service network. The ansible role, installing neutron, is configured to deploy the self-service network option.
 
@@ -104,6 +149,12 @@ Please read the Vagrantfile, to figure out, how this is done.
 * RabbitMQ
 * Memcache
 * Etcd
+* Chrony
+
+* https://docs.openstack.org/de/install-guide/environment-packages-ubuntu.html
+* https://docs.openstack.org/install-guide/environment-ntp.html
+
+Also add an openstack admin user and configuration for convenience (not recommended on production systems).
 
 #### Keystone
 
@@ -258,20 +309,6 @@ openstack --os-placement-api-version 1.2 resource class list --sort-column name
 openstack --os-placement-api-version 1.6 trait list --sort-column name
 ```
 
-#### nova
-
-Install nova - the OpenStack compute service
-
-* https://docs.openstack.org/nova/2024.1/install/controller-install-ubuntu.html
-
-##### Test
-
-Verify nova cell0 and cell1 are registered correctly
-
-```
-su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
-```
-
 #### neutron
 
 Install neutron - the OpenStack networking service
@@ -286,6 +323,20 @@ Verify neutron
 
 ```
 ?
+```
+
+#### nova
+
+Install nova - the OpenStack compute service
+
+* https://docs.openstack.org/nova/2024.1/install/controller-install-ubuntu.html
+
+##### Test
+
+Verify nova cell0 and cell1 are registered correctly
+
+```
+su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
 ```
 
 #### cinder
@@ -318,19 +369,13 @@ Verify horizon
 
 ### Compute1
 
-#### nova
+#### Dependencies
 
-Install nova - the OpenStack compute service
+* Chrony
 
-* https://docs.openstack.org/nova/2024.1/install/compute-install-ubuntu.html
+* https://docs.openstack.org/install-guide/environment-ntp.html
 
-##### Test
-
-Verify nova cell0 and cell1 are registered correctly
-
-```
-su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
-```
+Also add an openstack admin user and configuration for convenience (not recommended on production systems).
 
 #### neutron
 
@@ -347,3 +392,46 @@ Verify neutron
 ```
 ?
 ```
+
+#### nova
+
+Install nova - the OpenStack compute service
+
+* https://docs.openstack.org/nova/2024.1/install/compute-install-ubuntu.html
+
+##### Test
+
+* https://docs.openstack.org/nova/2024.1/install/verify.html
+
+Verify nova cell0 and cell1 are registered correctly
+
+```
+su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
+```
+
+### Block1
+
+#### Dependencies
+
+* Chrony
+
+* https://docs.openstack.org/install-guide/environment-ntp.html
+
+Also add an openstack admin user and configuration for convenience (not recommended on production systems).
+
+#### Cinder
+
+* https://docs.openstack.org/cinder/2024.1/install/cinder-storage-install-ubuntu.html
+
+#### Tests
+
+```
+?
+```
+
+### Object1
+
+@Todo
+
+* https://docs.openstack.org/swift/2024.1/install/
+* https://docs.openstack.org/cinder/2024.1/install/cinder-backup-install-ubuntu.html

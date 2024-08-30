@@ -20,7 +20,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "database", option: "connection", value: "mysql+pymysql://keystone:{{ KEYSTONE_DBPASS }}@controller/keystone" }
+  - { section: "database", option: "connection", value: "mysql+pymysql://keystone:{{ KEYSTONE_DBPASS }}@controller/keystone" }
 
 - name: Configure rabbitmq access
   ansible.builtin.ini_file:
@@ -29,7 +29,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
+  - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
 
 - name: Configure keystone token provider
   ansible.builtin.ini_file:
@@ -38,7 +38,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "receipt", option: "provider", value: "fernet" }
+  - { section: "receipt", option: "provider", value: "fernet" }
 
 - name: Configure keystone memcached
   ansible.builtin.ini_file:
@@ -47,7 +47,7 @@
     option: "{{ item.option }}"
     value: "{{ item.value }}"
   with_items:
-    - { section: "cache", option: "memcache_servers", value: "controller:11211" }
+  - { section: "cache", option: "memcache_servers", value: "controller:11211" }
 
 - name: Initialize the database
   ansible.builtin.shell: su -s /bin/sh -c "keystone-manage db_sync" keystone

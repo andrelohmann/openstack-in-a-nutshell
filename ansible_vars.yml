@@ -1,7 +1,5 @@
 ---
 
-# Some tests are integrated into the commands tasks
-RUN_TESTS: false
 # Database password of the root user
 ROOT_DBPASS: S3cr3tDB
 # https://docs.openstack.org/install-guide/environment-security.html
@@ -36,6 +34,8 @@ CINDER_PASS: C1nd3r
 
 # IPs of the management Network
 MGT_IP_CONTROLLER: 10.0.0.11
+MGT_IP_COMPUTE1: 10.0.0.21
+MGT_IP_BLOCK1: 10.0.0.31
 
 # Chrony - NTP Server
 NTP_SERVER: pool.ntp.org
