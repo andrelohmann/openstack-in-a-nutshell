@@ -12,7 +12,7 @@ configs:
     controller:
       # Startup the controller node on vagrant up
       autostart: true
-      memory: "4096"
+      memory: "6144"
       cpus: "2"
       disk_size: "20GB"
       internal_ip: "10.0.0.11"
