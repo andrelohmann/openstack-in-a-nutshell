@@ -21,7 +21,7 @@ configs:
       - controller.os.lokal
     # Compute Node - Neutron / Nova
     compute1:
-      autostart: false
+      autostart: true
       memory: "8192"
       cpus: "4"
       disk_size: "100GB"
