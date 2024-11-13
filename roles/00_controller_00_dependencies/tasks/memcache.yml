@@ -1,0 +1,29 @@
+---
+
+- name: Install dependencies packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - memcached
+    - python3-memcache
+
+- name: Make memcahed listen on public interface
+  ansible.builtin.lineinfile:
+    path: /etc/memcached.conf
+    regexp: '^-l '
+    line: -l 0.0.0.0
+
+- name: Restart memcached
+  ansible.builtin.systemd:
+    name: memcached.service
+    state: restarted
+  changed_when: false
+
+...

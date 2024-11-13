@@ -1,0 +1,35 @@
+---
+
+- name: Install dependencies packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - chrony
+
+- name: Set a custom NTP Server
+  ansible.builtin.lineinfile:
+    path: /etc/chrony/chrony.conf
+    regexp: '^server '
+    line: "server {{ NTP_SERVER }} iburst"
+
+- name: Allow internal network
+  ansible.builtin.lineinfile:
+    path: /etc/chrony/chrony.conf
+    regexp: '^allow '
+    line: "allow {{ INTERNAL_NETWORK }}"
+
+- name: Restart chrony
+  ansible.builtin.systemd:
+    name: chrony.service
+    enabled: true
+    state: restarted
+  changed_when: false
+
+...

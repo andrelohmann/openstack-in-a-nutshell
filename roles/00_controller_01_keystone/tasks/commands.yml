@@ -1,0 +1,21 @@
+---
+
+- name: Create the service project
+  ansible.builtin.shell: |
+    openstack project create --domain default --description "Service Project" service
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/keystone-project-service
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/keystone-project-service for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/keystone-project-service
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+...

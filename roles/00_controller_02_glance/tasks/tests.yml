@@ -1,0 +1,67 @@
+---
+
+- name: Download the cirros image
+  ansible.builtin.get_url:
+    url: http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
+    dest: /home/admin-os/cirros-0.4.0-x86_64-disk.img
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Upload the image to the Image service with openstack cli
+  ansible.builtin.shell: |
+    openstack image create --file /home/admin-os/cirros-0.4.0-x86_64-disk.img --disk-format qcow2 --container-format bare --public cirros
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_image_create
+
+- name: Echo _openstack_image_create
+  ansible.builtin.debug:
+    msg: "{{ _openstack_image_create }}"
+
+- name: List the image with openstack cli
+  ansible.builtin.shell: |
+    openstack image list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_image_list
+
+- name: Echo _openstack_image_list
+  ansible.builtin.debug:
+    msg: "{{ _openstack_image_list }}"
+
+- name: Upload the image to the Image service with glance cli
+  ansible.builtin.shell: |
+    glance image-create --name "cirros2" --file cirros-0.4.0-x86_64-disk.img --disk-format qcow2 --container-format bare --visibility=public
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _glance_image_create
+
+- name: Echo _glance_image_create
+  ansible.builtin.debug:
+    msg: "{{ _glance_image_create }}"
+
+- name: List the image with glance cli
+  ansible.builtin.shell: |
+    glance image-list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _glance_image_list
+
+- name: Echo _glance_image_list
+  ansible.builtin.debug:
+    msg: "{{ _glance_image_list }}"
+
+...

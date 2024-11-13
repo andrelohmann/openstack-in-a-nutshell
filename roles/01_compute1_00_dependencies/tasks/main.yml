@@ -1,0 +1,13 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Compute node Dependencies"
+
+- name: Create openstack admin user
+  ansible.builtin.include_tasks: admin-user.yml
+
+- name: Install Chrony (NTP)
+  ansible.builtin.include_tasks: chrony.yml
+
+...

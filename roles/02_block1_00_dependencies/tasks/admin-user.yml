@@ -1,0 +1,57 @@
+---
+
+- name: Install dependencies packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - python3-openstackclient
+    - acl
+
+- name: Create openstack group
+  ansible.builtin.group:
+    name: openstack
+    state: present
+
+- name: Create admin user
+  ansible.builtin.user:
+    name: admin-os
+    comment: Openstack admin
+    uid: 1100
+    group: openstack
+    shell: /bin/bash
+    state: present
+
+- name: Add OS Environments
+  ansible.builtin.blockinfile:
+    path: /home/admin-os/.profile
+    marker: "# <!-- {mark} ANSIBLE MANAGED BLOCK - OpenStack Profile -->"
+    block: |
+      export OS_USERNAME=admin
+      export OS_PASSWORD={{ ADMIN_PASS }}
+      export OS_PROJECT_NAME=admin
+      export OS_USER_DOMAIN_NAME=Default
+      export OS_PROJECT_DOMAIN_NAME=Default
+      export OS_AUTH_URL=http://controller:5000/v3
+      export OS_IDENTITY_API_VERSION=3
+      export OS_IMAGE_API_VERSION=2
+  become: true
+  become_user: admin-os
+
+# We need to track, whcih deployment commands had been running
+# therefor we are touching files inside /opt/os-deployment-progress
+- name: Create /opt/os-deployment-progress directory for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+...

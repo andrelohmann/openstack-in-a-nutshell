@@ -1,0 +1,139 @@
+---
+
+- name: Install cinder packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - cinder-api
+    - cinder-scheduler
+
+- name: Configure cinder connection
+  ansible.builtin.ini_file:
+    path: /etc/cinder/cinder.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "database", option: "connection", value: "mysql+pymysql://cinder:{{ CINDER_DBPASS }}@controller/cinder" }
+
+- name: Configure rabbitmq access
+  ansible.builtin.ini_file:
+    path: /etc/cinder/cinder.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller" }
+
+- name: Configure Identity service access
+  ansible.builtin.ini_file:
+    path: /etc/cinder/cinder.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
+  - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
+  - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000" }
+  - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
+  - { section: "keystone_authtoken", option: "auth_type", value: "password" }
+  - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "user_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "project_name", value: "service" }
+  - { section: "keystone_authtoken", option: "username", value: "cinder" }
+  - { section: "keystone_authtoken", option: "password", value: "{{ CINDER_PASS }}" }
+
+# - name: Remove uneccessary keystone_authtoken configs
+#   ansible.builtin.ini_file:
+#     path: /etc/neutron/neutron.conf
+#     section: "{{ item.section }}"
+#     option: "{{ item.option }}"
+#     state: "absent"
+#   with_items:
+#     - { section: "keystone_authtoken", option: "auth_uri" }
+#     - { section: "keystone_authtoken", option: "auth_version" }
+#     - { section: "keystone_authtoken", option: "interface" }
+#     - { section: "keystone_authtoken", option: "delay_auth_decision" }
+#     - { section: "keystone_authtoken", option: "http_connect_timeout" }
+#     - { section: "keystone_authtoken", option: "http_request_max_retries" }
+#     - { section: "keystone_authtoken", option: "cache" }
+#     - { section: "keystone_authtoken", option: "certfile" }
+#     - { section: "keystone_authtoken", option: "keyfile" }
+#     - { section: "keystone_authtoken", option: "cafile" }
+#     - { section: "keystone_authtoken", option: "insecure" }
+#     - { section: "keystone_authtoken", option: "region_name" }
+#     - { section: "keystone_authtoken", option: "token_cache_time" }
+#     - { section: "keystone_authtoken", option: "memcache_security_strategy" }
+#     - { section: "keystone_authtoken", option: "memcache_secret_key" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_dead_retry" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_maxsize" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_socket_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_unused_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_conn_get_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_use_advanced_pool" }
+#     - { section: "keystone_authtoken", option: "include_service_catalog" }
+#     - { section: "keystone_authtoken", option: "enforce_token_bind" }
+#     - { section: "keystone_authtoken", option: "service_token_roles" }
+#     - { section: "keystone_authtoken", option: "service_token_roles_required" }
+#     - { section: "keystone_authtoken", option: "service_type" }
+#     - { section: "keystone_authtoken", option: "auth_section" }
+
+- name: Configure management interface IP address of the controller node
+  ansible.builtin.ini_file:
+    path: /etc/cinder/cinder.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "my_ip", value: "{{ MGT_IP_CONTROLLER }}" }
+
+- name: Configure oslo concurrency
+  ansible.builtin.ini_file:
+    path: /etc/cinder/cinder.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/cinder/tmp" }
+
+- name: Populate the cinder database
+  ansible.builtin.shell: su -s /bin/sh -c "cinder-manage db sync" cinder
+  args:
+    executable: /bin/bash
+    creates: /var/lib/mysql/cinder/alembic_version.ibd
+
+- name: Configure Compute to use Block Storage
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "cinder", option: "os_region_name", value: "RegionOne" }
+
+- name: Restart nova-api
+  ansible.builtin.systemd:
+    name: nova-api.service
+    state: restarted
+  changed_when: false
+
+- name: Restart cinder-scheduler
+  ansible.builtin.systemd:
+    name: cinder-scheduler.service
+    state: restarted
+  changed_when: false
+
+- name: Restart apache2
+  ansible.builtin.systemd:
+    name: apache2.service
+    state: restarted
+  changed_when: false
+
+...

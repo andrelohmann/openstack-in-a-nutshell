@@ -1,0 +1,187 @@
+---
+
+- name: Install neutron packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - neutron-openvswitch-agent
+
+- name: Configure rabbitmq access
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
+
+- name: Configure oslo concurrency
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/neutron/tmp" }
+
+- name: Configure the Open vSwitch agent
+  ansible.builtin.ini_file:
+    path: /etc/neutron/plugins/ml2/openvswitch_agent.ini
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "ovs", option: "bridge_mappings", value: "provider:prvbr0" }
+  - { section: "ovs", option: "local_ip", value: "{{ MGT_IP_COMPUTE1 }}" }
+  - { section: "agent", option: "tunnel_types", value: "vxlan" }
+  - { section: "agent", option: "l2_population", value: "true" }
+  - { section: "securitygroup", option: "enable_security_group", value: "true" }
+  - { section: "securitygroup", option: "firewall_driver", value: "openvswitch" }
+
+
+
+
+- name: Configure neutron connection
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+    - { section: "database", option: "connection", value: "mysql+pymysql://neutron:{{ NEUTRON_DBPASS }}@controller/neutron" }
+
+- name: Enable the Modular Layer 2 (ML2) plug-in and router service
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "core_plugin", value: "ml2" }
+  - { section: "DEFAULT", option: "service_plugins", value: "router" }
+
+- name: Configure Identity service access
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "auth_strategy", value: "keystone" }
+  - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
+  - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
+  - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
+  - { section: "keystone_authtoken", option: "auth_type", value: "password" }
+  - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "user_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "project_name", value: "service" }
+  - { section: "keystone_authtoken", option: "username", value: "neutron" }
+  - { section: "keystone_authtoken", option: "password", value: "{{ NEUTRON_PASS }}" }
+
+# - name: Remove uneccessary keystone_authtoken configs
+#   ansible.builtin.ini_file:
+#     path: /etc/neutron/neutron.conf
+#     section: "{{ item.section }}"
+#     option: "{{ item.option }}"
+#     state: "absent"
+#   with_items:
+#     - { section: "keystone_authtoken", option: "auth_uri" }
+#     - { section: "keystone_authtoken", option: "auth_version" }
+#     - { section: "keystone_authtoken", option: "interface" }
+#     - { section: "keystone_authtoken", option: "delay_auth_decision" }
+#     - { section: "keystone_authtoken", option: "http_connect_timeout" }
+#     - { section: "keystone_authtoken", option: "http_request_max_retries" }
+#     - { section: "keystone_authtoken", option: "cache" }
+#     - { section: "keystone_authtoken", option: "certfile" }
+#     - { section: "keystone_authtoken", option: "keyfile" }
+#     - { section: "keystone_authtoken", option: "cafile" }
+#     - { section: "keystone_authtoken", option: "insecure" }
+#     - { section: "keystone_authtoken", option: "region_name" }
+#     - { section: "keystone_authtoken", option: "token_cache_time" }
+#     - { section: "keystone_authtoken", option: "memcache_security_strategy" }
+#     - { section: "keystone_authtoken", option: "memcache_secret_key" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_dead_retry" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_maxsize" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_socket_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_unused_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_conn_get_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_use_advanced_pool" }
+#     - { section: "keystone_authtoken", option: "include_service_catalog" }
+#     - { section: "keystone_authtoken", option: "enforce_token_bind" }
+#     - { section: "keystone_authtoken", option: "service_token_roles" }
+#     - { section: "keystone_authtoken", option: "service_token_roles_required" }
+#     - { section: "keystone_authtoken", option: "service_type" }
+#     - { section: "keystone_authtoken", option: "auth_section" }
+
+- name: Configure Networking to notify Compute of network topology changes
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "notify_nova_on_port_status_changes", value: "true" }
+  - { section: "DEFAULT", option: "notify_nova_on_port_data_changes", value: "true" }
+  - { section: "nova", option: "auth_url", value: "http://controller:5000/" }
+  - { section: "nova", option: "auth_type", value: "password" }
+  - { section: "nova", option: "project_domain_name", value: "Default" }
+  - { section: "nova", option: "user_domain_name", value: "Default" }
+  - { section: "nova", option: "region_name", value: "RegionOne" }
+  - { section: "nova", option: "project_name", value: "service" }
+  - { section: "nova", option: "username", value: "nova" }
+  - { section: "nova", option: "password", value: "{{ NOVA_PASS }}" }
+
+- name: Configure oslo concurrency
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/neutron/tmp" }
+
+- name: Configure the Modular Layer 2 (ML2) plug-in
+  ansible.builtin.ini_file:
+    path: /etc/neutron/neutron.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "ml2", option: "type_drivers", value: "flat,vlan,vxlan" }
+  - { section: "ml2", option: "tenant_network_types", value: "vxlan" }
+  - { section: "ml2", option: "mechanism_drivers", value: "openvswitch,l2population" }
+  - { section: "ml2", option: "extension_drivers", value: "port_security" }
+  - { section: "ml2_type_flat", option: "flat_networks", value: "provider" }
+  - { section: "ml2_type_vxlan", option: "vni_ranges", value: "1:1000" }
+
+- name: Set sysctl net.bridge.bridge-nf-call-ip(6)tables
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+  with_items:
+  - net.bridge.bridge-nf-call-iptables
+  - net.bridge.bridge-nf-call-ip6tables
+
+- name: Add br_netfilter kernel module
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+    persistent: present
+
+- name: Restart neutron-openvswitch-agent
+  ansible.builtin.systemd:
+    name: neutron-openvswitch-agent.service
+    state: restarted
+  changed_when: false
+
+...

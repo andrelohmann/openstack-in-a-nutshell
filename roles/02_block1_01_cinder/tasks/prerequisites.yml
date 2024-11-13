@@ -1,0 +1,30 @@
+---
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - lvm2
+    - thin-provisioning-tools
+
+- name: Create create the cinder-volumes vg
+  community.general.lvg:
+    vg: cinder-volumes
+    pvs: /dev/sdc
+    pvresize: true
+
+- name: Exclude /dev/sdc from being scanned for blockstorages
+  ansible.builtin.lineinfile:
+    path: /etc/lvm/lvm.conf
+    regexp: '^        filter'
+    insertafter: 'devices {'
+    line: '        filter = [ "a/sdc/", "r/.*/"]'
+
+...

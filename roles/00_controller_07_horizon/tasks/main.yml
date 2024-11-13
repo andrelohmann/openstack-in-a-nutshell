@@ -1,0 +1,10 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Horizon - the OpenStack Dashboard Service"
+
+- name: Install horizon
+  ansible.builtin.include_tasks: horizon.yml
+
+...

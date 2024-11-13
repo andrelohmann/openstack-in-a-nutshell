@@ -1,0 +1,20 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Cinder - the OpenStack Block Storage Service"
+
+- name: Create database
+  ansible.builtin.include_tasks: database.yml
+
+- name: Run prerequisites
+  ansible.builtin.include_tasks: prerequisites.yml
+
+- name: Install cinder
+  ansible.builtin.include_tasks: cinder.yml
+
+#- name: Validate cinder
+#  ansible.builtin.include_tasks: tests.yml
+#  when: RUN_TESTS
+
+...

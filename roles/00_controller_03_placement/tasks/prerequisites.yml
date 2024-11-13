@@ -1,0 +1,113 @@
+---
+
+- name: Create the placement user
+  ansible.builtin.expect:
+    command: openstack user create --domain default --password-prompt placement
+    responses:
+      'User Password': '{{ PLACEMENT_PASS }}'
+      'Repeat User Password': '{{ PLACEMENT_PASS }}'
+    timeout: 30
+    creates: /opt/os-deployment-progress/placement-user
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/placement-user for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/placement-user
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Add the admin role to the placement user and service project
+  ansible.builtin.shell: |
+    openstack role add --project service --user placement admin
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/placement-admin
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/placement-admin for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/placement-admin
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the placement API entry in the service catalog
+  ansible.builtin.shell: |
+    openstack service create --name placement --description "Placement API" placement
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/placement-service
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/placement-service for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/placement-service
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the public placement service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne placement public http://controller:8778 --format json
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/placement-endpoint-public
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/placement-endpoint-public for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/placement-endpoint-public
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the internal placement service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne placement internal http://controller:8778
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/placement-endpoint-internal
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/placement-endpoint-internal for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/placement-endpoint-internal
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the admin placement service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne placement admin http://controller:8778
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/placement-endpoint-admin
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/placement-endpoint-admin for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/placement-endpoint-admin
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+...

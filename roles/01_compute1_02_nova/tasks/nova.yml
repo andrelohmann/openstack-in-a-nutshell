@@ -1,0 +1,199 @@
+---
+
+- name: Install nova packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - nova-compute
+
+- name: Configure rabbitmq access
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "transport_url", value: "rabbit://openstack:{{ RABBIT_PASS }}@controller:5672/" }
+
+- name: Configure Identity service access
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "api", option: "auth_strategy", value: "keystone" }
+  - { section: "keystone_authtoken", option: "www_authenticate_uri", value: "http://controller:5000/" }
+  - { section: "keystone_authtoken", option: "auth_url", value: "http://controller:5000/" }
+  - { section: "keystone_authtoken", option: "memcached_servers", value: "controller:11211" }
+  - { section: "keystone_authtoken", option: "auth_type", value: "password" }
+  - { section: "keystone_authtoken", option: "project_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "user_domain_name", value: "Default" }
+  - { section: "keystone_authtoken", option: "project_name", value: "service" }
+  - { section: "keystone_authtoken", option: "username", value: "nova" }
+  - { section: "keystone_authtoken", option: "password", value: "{{ NOVA_PASS }}" }
+
+# - name: Remove uneccessary keystone_authtoken configs
+#   ansible.builtin.ini_file:
+#     path: /etc/nova/nova.conf
+#     section: "{{ item.section }}"
+#     option: "{{ item.option }}"
+#     state: "absent"
+#   with_items:
+#     - { section: "keystone_authtoken", option: "auth_uri" }
+#     - { section: "keystone_authtoken", option: "auth_version" }
+#     - { section: "keystone_authtoken", option: "interface" }
+#     - { section: "keystone_authtoken", option: "delay_auth_decision" }
+#     - { section: "keystone_authtoken", option: "http_connect_timeout" }
+#     - { section: "keystone_authtoken", option: "http_request_max_retries" }
+#     - { section: "keystone_authtoken", option: "cache" }
+#     - { section: "keystone_authtoken", option: "certfile" }
+#     - { section: "keystone_authtoken", option: "keyfile" }
+#     - { section: "keystone_authtoken", option: "cafile" }
+#     - { section: "keystone_authtoken", option: "insecure" }
+#     - { section: "keystone_authtoken", option: "region_name" }
+#     - { section: "keystone_authtoken", option: "token_cache_time" }
+#     - { section: "keystone_authtoken", option: "memcache_security_strategy" }
+#     - { section: "keystone_authtoken", option: "memcache_secret_key" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_dead_retry" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_maxsize" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_socket_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_unused_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_pool_conn_get_timeout" }
+#     - { section: "keystone_authtoken", option: "memcache_use_advanced_pool" }
+#     - { section: "keystone_authtoken", option: "include_service_catalog" }
+#     - { section: "keystone_authtoken", option: "enforce_token_bind" }
+#     - { section: "keystone_authtoken", option: "service_token_roles" }
+#     - { section: "keystone_authtoken", option: "service_token_roles_required" }
+#     - { section: "keystone_authtoken", option: "service_type" }
+#     - { section: "keystone_authtoken", option: "auth_section" }
+
+- name: Configure service user tokens
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "service_user", option: "send_service_user_token", value: "true" }
+  - { section: "service_user", option: "auth_url", value: "http://controller/identity" }
+  - { section: "service_user", option: "auth_strategy", value: "keystone" }
+  - { section: "service_user", option: "auth_type", value: "password" }
+  - { section: "service_user", option: "project_domain_name", value: "Default" }
+  - { section: "service_user", option: "user_domain_name", value: "Default" }
+  - { section: "service_user", option: "project_name", value: "service" }
+  - { section: "service_user", option: "username", value: "nova" }
+  - { section: "service_user", option: "password", value: "{{ NOVA_PASS }}" }
+
+- name: Configure management interface IP address of the compute1 node
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "DEFAULT", option: "my_ip", value: "{{ MGT_IP_COMPUTE1 }}" }
+
+- name: Configure vnc
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "vnc", option: "enabled", value: "true" }
+  - { section: "vnc", option: "server_listen", value: "$my_ip" }
+  - { section: "vnc", option: "server_proxyclient_address", value: "$my_ip" }
+  - { section: "vnc", option: "novncproxy_base_url", value: "http://controller:6080/vnc_auto.html" }
+
+- name: Configure glance
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  # API Servers is a deprecated option
+  - { section: "glance", option: "api_servers", value: "http://controller:9292" }
+
+- name: Configure oslo concurrency
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "oslo_concurrency", option: "lock_path", value: "/var/lib/nova/tmp" }
+
+- name: Configure placement
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "placement", option: "region_name", value: "RegionOne" }
+  - { section: "placement", option: "project_domain_name", value: "Default" }
+  - { section: "placement", option: "user_domain_name", value: "Default" }
+  - { section: "placement", option: "project_name", value: "service" }
+  - { section: "placement", option: "auth_type", value: "password" }
+  - { section: "placement", option: "auth_url", value: "http://controller:5000/v3" }
+  - { section: "placement", option: "username", value: "placement" }
+  - { section: "placement", option: "password", value: "{{ PLACEMENT_PASS }}" }
+
+- name: Configure neutron
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "neutron", option: "auth_url", value: "http://controller:5000/" }
+  - { section: "neutron", option: "auth_type", value: "password" }
+  - { section: "neutron", option: "project_domain_name", value: "Default" }
+  - { section: "neutron", option: "user_domain_name", value: "Default" }
+  - { section: "neutron", option: "region_name", value: "RegionOne" }
+  - { section: "neutron", option: "project_name", value: "service" }
+  - { section: "neutron", option: "username", value: "neutron" }
+  - { section: "neutron", option: "password", value: "{{ NEUTRON_PASS }}" }
+  - { section: "neutron", option: "service_metadata_proxy", value: "true" }
+  - { section: "neutron", option: "metadata_proxy_shared_secret", value: "{{ METADATA_SECRET }}" }
+
+- name: Check for virtualization availability
+  ansible.builtin.shell: |
+    egrep -c '(vmx|svm)' /proc/cpuinfo
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+  # We need to extract the endpoint ID in the glance installation
+  register: _virt_available
+
+- name: Debug _virt_available
+  ansible.builtin.debug:
+    msg: "{{ _virt_available }}"
+
+- name: Configure libvirt if
+  ansible.builtin.ini_file:
+    path: /etc/nova/nova.conf
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  with_items:
+  - { section: "libvirt", option: "virt_type", value: "qemu" }
+  #when: _virt_available.rc < 0
+
+- name: Restart nova-compute
+  ansible.builtin.systemd:
+    name: nova-compute.service
+    state: restarted
+  changed_when: false
+
+...

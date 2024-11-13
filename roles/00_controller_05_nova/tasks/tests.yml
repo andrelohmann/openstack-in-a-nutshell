@@ -1,0 +1,8 @@
+---
+
+- name: Verify nova cell0 and cell1 are registered correctly
+  ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
+  args:
+    executable: /bin/bash
+
+...

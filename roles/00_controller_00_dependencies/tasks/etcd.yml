@@ -1,0 +1,39 @@
+---
+
+- name: Install dependencies packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - etcd
+
+# https://docs.openstack.org/install-guide/environment-etcd-ubuntu.html
+- name: Configure Etcd
+  ansible.builtin.blockinfile:
+    path: /etc/default/etcd
+    marker: "# <!-- {mark} ANSIBLE MANAGED BLOCK - Etcd controller configuration -->"
+    block: |
+      ETCD_NAME="controller"
+      ETCD_DATA_DIR="/var/lib/etcd"
+      ETCD_INITIAL_CLUSTER_STATE="new"
+      ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster-01"
+      ETCD_INITIAL_CLUSTER="controller=http://{{ MGT_IP_CONTROLLER }}:2380"
+      ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ MGT_IP_CONTROLLER }}:2380"
+      ETCD_ADVERTISE_CLIENT_URLS="http://{{ MGT_IP_CONTROLLER }}:2379"
+      ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
+      ETCD_LISTEN_CLIENT_URLS="http://{{ MGT_IP_CONTROLLER }}:2379"
+
+- name: Restart memcached
+  ansible.builtin.systemd:
+    name: etcd.service
+    enabled: true
+    state: restarted
+  changed_when: false
+
+...

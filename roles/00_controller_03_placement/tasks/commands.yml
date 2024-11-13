@@ -1,0 +1,9 @@
+---
+
+- name: Add admin-os user to placement group
+  ansible.builtin.user:
+    name: admin-os
+    groups: placement
+    append: yes
+
+...

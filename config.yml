@@ -1,0 +1,54 @@
+---
+configs:
+  # Select the ansible version
+  ansible_version: latest
+  # Some tests are integrated into the ansible playbooks
+  run_tests: false
+  # Vagrant Image
+  vagrant_image: "ubuntu/jammy64"
+  # vagrant_image: "cloudcourse/noble64"
+  vms:
+    # Controller Node - Keystone / Glance / Placement / Neutron / Nova / Horizon
+    controller:
+      # Startup the controller node on vagrant up
+      autostart: true
+      memory: "6144"
+      cpus: "2"
+      disk_size: "20GB"
+      internal_ip: "10.0.0.11"
+      domain: controller
+      aliases:
+      - controller.os.lokal
+    # Compute Node - Neutron / Nova
+    compute1:
+      autostart: true
+      memory: "8192"
+      cpus: "4"
+      disk_size: "100GB"
+      internal_ip: "10.0.0.21"
+      domain: compute1
+      aliases:
+      - compute1.os.lokal
+    # Block Storage Node - Cinder
+    block1:
+      autostart: true
+      memory: "2048"
+      cpus: "2"
+      disk_size: "10GB"
+      storage_disk_size: "100GB"
+      internal_ip: "10.0.0.31"
+      domain: block1
+      aliases:
+      - block1.os.lokal
+    # Object Storage Node - Swift
+    #object1:
+    #  autostart: false
+    #  memory: "2048"
+    #  cpus: "2"
+    #  disk_size: "20GB"
+    #  storage_disk_size: "100GB"
+    #  internal_ip: "10.0.0.41"
+    #  domain: object1
+    #  aliases:
+    #  - object1.os.lokal
+...

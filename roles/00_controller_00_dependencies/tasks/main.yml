@@ -1,0 +1,25 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Controller node Dependencies"
+
+- name: Create openstack admin user
+  ansible.builtin.include_tasks: admin-user.yml
+
+- name: Install MariaDB
+  ansible.builtin.include_tasks: mariadb.yml
+
+- name: Install RabbitMQ
+  ansible.builtin.include_tasks: rabbitmq.yml
+
+- name: Install Memcache
+  ansible.builtin.include_tasks: memcache.yml
+
+- name: Install Etcd
+  ansible.builtin.include_tasks: etcd.yml
+
+- name: Install Chrony (NTP)
+  ansible.builtin.include_tasks: chrony.yml
+
+...

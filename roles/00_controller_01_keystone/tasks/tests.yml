@@ -1,0 +1,75 @@
+---
+
+- name: Create the example domain
+  ansible.builtin.shell: |
+    openstack domain create --description "An Example Domain" example
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_domain_create
+
+- name: Echo _openstack_domain_create
+  ansible.builtin.debug:
+    msg: "{{ _openstack_domain_create }}"
+
+- name: Create the demo project
+  ansible.builtin.shell: |
+    openstack project create --domain example --description "Demo Project" myproject
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_project_create
+
+- name: Echo _openstack_project_create
+  ansible.builtin.debug:
+    msg: "{{ _openstack_project_create }}"
+
+- name: Create demo user
+  ansible.builtin.expect:
+    command: openstack user create --domain example --password-prompt myuser
+    responses:
+      'User Password': '{{ DEMO_PASS }}'
+      'Repeat User Password': '{{ DEMO_PASS }}'
+    timeout: 30
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_user_create
+
+- name: Echo _openstack_user_create
+  ansible.builtin.debug:
+    msg: "{{ _openstack_user_create }}"
+
+- name: Create the demo role
+  ansible.builtin.shell: |
+    openstack role create myrole
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_role_create
+
+- name: Echo _openstack_role_create
+  ansible.builtin.debug:
+    msg: "{{ _openstack_role_create }}"
+
+- name: Add project and user to role
+  ansible.builtin.shell: |
+    openstack role add --project myproject --user myuser myrole
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_role_add
+
+- name: Echo _openstack_role_add
+  ansible.builtin.debug:
+    msg: "{{ _openstack_role_add }}"
+
+...

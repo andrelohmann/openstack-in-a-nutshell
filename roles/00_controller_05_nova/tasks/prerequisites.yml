@@ -1,0 +1,113 @@
+---
+
+- name: Create the nova user
+  ansible.builtin.expect:
+    command: openstack user create --domain default --password-prompt nova
+    responses:
+      'User Password': '{{ NOVA_PASS }}'
+      'Repeat User Password': '{{ NOVA_PASS }}'
+    timeout: 30
+    creates: /opt/os-deployment-progress/nova-user
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/nova-user for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-user
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Add the admin role to the nova user and service project
+  ansible.builtin.shell: |
+    openstack role add --project service --user nova admin
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/nova-admin
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/nova-admin for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-admin
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the nova service entity
+  ansible.builtin.shell: |
+    openstack service create --name nova --description "OpenStack Compute" compute
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/nova-compute
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/nova-compute for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-compute
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the public nova service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne compute public http://controller:8774/v2.1 --format json
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/nova-endpoint-public
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/nova-endpoint-public for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-endpoint-public
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the internal nova service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne compute internal http://controller:8774/v2.1
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/nova-endpoint-internal
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/nova-endpoint-internal for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-endpoint-internal
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create the admin nova service API endpoint
+  ansible.builtin.shell: |
+    openstack endpoint create --region RegionOne compute admin http://controller:8774/v2.1
+  args:
+    executable: /bin/bash
+    creates: /opt/os-deployment-progress/nova-endpoint-admin
+  become: true
+  become_user: admin-os
+  become_flags: -i
+
+- name: Touch /opt/os-deployment-progress/nova-endpoint-admin for idempotency
+  ansible.builtin.file:
+    path: /opt/os-deployment-progress/nova-endpoint-admin
+    state: touch
+    owner: root
+    group: root
+    mode: '0755'
+
+...

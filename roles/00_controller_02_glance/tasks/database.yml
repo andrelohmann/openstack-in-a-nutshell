@@ -1,0 +1,26 @@
+---
+
+- name: Create the glance database
+  community.mysql.mysql_db:
+    name: glance
+    state: present
+
+- name: Create user glance and give all permissions to glance from localhost
+  community.mysql.mysql_user:
+    name: glance
+    password: "{{ GLANCE_DBPASS }}"
+    priv: 'glance.*:ALL'
+    host: localhost
+    state: present
+    append_privs: true
+
+- name: Create user glance and give all permissions to glance from %
+  community.mysql.mysql_user:
+    name: glance
+    password: "{{ GLANCE_DBPASS }}"
+    priv: 'glance.*:ALL'
+    host: '%'
+    state: present
+    append_privs: true
+
+...
