@@ -40,8 +40,10 @@
       - curl
       - jq
 
-  - name: Install cloud-archive:caracal
-    command: add-apt-repository cloud-archive:caracal -y
+  #- name: Install cloud-archive:epoxy
+  #  command: add-apt-repository cloud-archive:epoxy -y
+  #- name: Install cloud-archive:caracal
+  #  command: add-apt-repository cloud-archive:caracal -y
   # - name: Install cloud-archive:bobcat
   #   command: add-apt-repository cloud-archive:bobcat -y
   # - name: Install cloud-archive:antelope

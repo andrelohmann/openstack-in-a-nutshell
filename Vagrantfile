@@ -16,7 +16,7 @@ class ::Hash
 end
 
 # Override the configs with your custom configs
-if File.exists?("#{current_dir}/config.override.yml")
+if File.exist?("#{current_dir}/config.override.yml")
   configs_override = YAML.load_file("#{current_dir}/config.override.yml")
   configs = configs.deep_merge(configs_override)
   # puts configs.to_yaml
@@ -70,7 +70,7 @@ Vagrant.configure("2") do |config|
     # Run Ansible from the Vagrant VM
     b.vm.provision "shell",
       run: "once",
-      inline: "apt update && apt install python3-pip tree net-tools openvswitch-switch tcptraceroute -yqq"
+      inline: "apt update && apt install python3-pip tree net-tools openvswitch-switch tcptraceroute isc-dhcp-client -yqq"
 
     # Build the provider network bridge with openvswitch
     # shut down enp0s8 (public_network interface)
@@ -78,8 +78,10 @@ Vagrant.configure("2") do |config|
     # startup the bridge and the interface
     # run dhclient on the provider bridge
     b.vm.provision "shell",
-      run: "always",
-      inline: "(ovs-vsctl add-br prvbr0 && ifconfig enp0s8 down && ovs-vsctl add-port prvbr0 enp0s8 && ifconfig prvbr0 up && ifconfig enp0s8 up && dhclient prvbr0) || true"
+      run: "once",
+      # Noble variant with different network interfaces
+      inline: "(ovs-vsctl add-br prvbr0 && ifconfig eth1 down && ovs-vsctl add-port prvbr0 eth1 && ifconfig prvbr0 up && ifconfig eth1 up && dhclient prvbr0) || true"
+      #inline: "(ovs-vsctl add-br prvbr0 && ifconfig enp0s8 down && ovs-vsctl add-port prvbr0 enp0s8 && ifconfig prvbr0 up && ifconfig enp0s8 up && dhclient prvbr0) || true"
 
     # Delete the default route, to apply the provider network route
     b.vm.provision "shell",
@@ -88,15 +90,15 @@ Vagrant.configure("2") do |config|
 
     if vagrant_config['ansible_version'] == "latest"
       # Noble variant with --break-system-packages
-      # b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core"
-      b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core"
+      b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core"
+      #b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core"
     else
       # if you need to test with a specific version
       # e.g. Ansible Version 2.11 is important for kubespray
       # b.vm.provision "shell", inline: "pip install --upgrade ansible-core~=2.11.0"
       # Noble variant with --break-system-packages
-      # b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
-      b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
+      b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
+      #b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
     end
 
     b.vm.provision "ansible_local" do |ansible|
@@ -146,7 +148,7 @@ Vagrant.configure("2") do |config|
     # Run Ansible from the Vagrant VM
     b.vm.provision "shell",
       run: "once",
-      inline: "apt update && apt install python3-pip tree net-tools openvswitch-switch tcptraceroute -yqq"
+      inline: "apt update && apt install python3-pip tree net-tools openvswitch-switch tcptraceroute isc-dhcp-client -yqq"
 
     # Build the provider network bridge with openvswitch
     # shut down enp0s8 (public_network interface)
@@ -154,8 +156,10 @@ Vagrant.configure("2") do |config|
     # startup the bridge and the interface
     # run dhclient on the provider bridge
     b.vm.provision "shell",
-      run: "always",
-      inline: "(ovs-vsctl add-br prvbr0 && ifconfig enp0s8 down && ovs-vsctl add-port prvbr0 enp0s8 && ifconfig prvbr0 up && ifconfig enp0s8 up && dhclient prvbr0) || true"
+      run: "once",
+      # Noble variant with different network interfaces
+      inline: "(ovs-vsctl add-br prvbr0 && ifconfig eth1 down && ovs-vsctl add-port prvbr0 eth1 && ifconfig prvbr0 up && ifconfig eth1 up && dhclient prvbr0) || true"
+      #inline: "(ovs-vsctl add-br prvbr0 && ifconfig enp0s8 down && ovs-vsctl add-port prvbr0 enp0s8 && ifconfig prvbr0 up && ifconfig enp0s8 up && dhclient prvbr0) || true"
 
     # Delete the default route, to apply the provider network route
     b.vm.provision "shell",
@@ -164,15 +168,15 @@ Vagrant.configure("2") do |config|
 
     if vagrant_config['ansible_version'] == "latest"
       # Noble variant with --break-system-packages
-      # b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core"
-      b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core"
+      b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core"
+      #b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core"
     else
       # if you need to test with a specific version
       # e.g. Ansible Version 2.11 is important for kubespray
       # b.vm.provision "shell", inline: "pip install --upgrade ansible-core~=2.11.0"
       # Noble variant with --break-system-packages
-      # b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
-      b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
+      b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
+      #b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
     end
 
     b.vm.provision "ansible_local" do |ansible|
@@ -223,7 +227,7 @@ Vagrant.configure("2") do |config|
     # Run Ansible from the Vagrant VM
     b.vm.provision "shell",
       run: "once",
-      inline: "apt update && apt install python3-pip tree net-tools openvswitch-switch tcptraceroute -yqq"
+      inline: "apt update && apt install python3-pip tree net-tools openvswitch-switch tcptraceroute isc-dhcp-client -yqq"
 
     # Build the provider network bridge with openvswitch
     # shut down enp0s8 (public_network interface)
@@ -231,8 +235,10 @@ Vagrant.configure("2") do |config|
     # startup the bridge and the interface
     # run dhclient on the provider bridge
     b.vm.provision "shell",
-      run: "always",
-      inline: "(ovs-vsctl add-br prvbr0 && ifconfig enp0s8 down && ovs-vsctl add-port prvbr0 enp0s8 && ifconfig prvbr0 up && ifconfig enp0s8 up && dhclient prvbr0) || true"
+      run: "once",
+      # Noble variant with different network interfaces
+      inline: "(ovs-vsctl add-br prvbr0 && ifconfig eth1 down && ovs-vsctl add-port prvbr0 eth1 && ifconfig prvbr0 up && ifconfig eth1 up && dhclient prvbr0) || true"
+      #inline: "(ovs-vsctl add-br prvbr0 && ifconfig enp0s8 down && ovs-vsctl add-port prvbr0 enp0s8 && ifconfig prvbr0 up && ifconfig enp0s8 up && dhclient prvbr0) || true"
 
     # Delete the default route, to apply the provider network route
     b.vm.provision "shell",
@@ -241,15 +247,15 @@ Vagrant.configure("2") do |config|
 
     if vagrant_config['ansible_version'] == "latest"
       # Noble variant with --break-system-packages
-      # b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core"
-      b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core"
+      b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core"
+      #b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core"
     else
       # if you need to test with a specific version
       # e.g. Ansible Version 2.11 is important for kubespray
       # b.vm.provision "shell", inline: "pip install --upgrade ansible-core~=2.11.0"
       # Noble variant with --break-system-packages
-      # b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
-      b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
+      b.vm.provision "shell", inline: "pip3 install --break-system-packages --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
+      #b.vm.provision "shell", inline: "pip3 install --upgrade --no-warn-script-location ansible-core~=#{vagrant_config['ansible_version']}"
     end
 
     b.vm.provision "ansible_local" do |ansible|

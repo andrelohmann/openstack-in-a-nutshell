@@ -11,7 +11,7 @@
     cache_valid_time: 3600
   vars:
     packages:
-    - etcd
+    - etcd-server
 
 # https://docs.openstack.org/install-guide/environment-etcd-ubuntu.html
 - name: Configure Etcd

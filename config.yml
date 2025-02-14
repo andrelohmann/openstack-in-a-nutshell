@@ -5,7 +5,8 @@ configs:
   # Some tests are integrated into the ansible playbooks
   run_tests: false
   # Vagrant Image
-  vagrant_image: "ubuntu/jammy64"
+  #vagrant_image: "ubuntu/jammy64"
+  vagrant_image: "bento/ubuntu-24.04"
   # vagrant_image: "cloudcourse/noble64"
   vms:
     # Controller Node - Keystone / Glance / Placement / Neutron / Nova / Horizon
