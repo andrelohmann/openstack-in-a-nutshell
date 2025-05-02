@@ -1,8 +1,35 @@
 ---
 
-#- name: Verify nova cell0 and cell1 are registered correctly
-#  ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
-#  args:
-#    executable: /bin/bash
+- name: List neutron extensions
+  ansible.builtin.shell: |
+    openstack extension list --network
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _neutron_extension_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo neutron extensions list
+  ansible.builtin.debug:
+    msg: "{{ _neutron_extension_list.stdout_lines if _neutron_extension_list.stdout_lines is defined else _neutron_extension_list.stderr_lines }}"
+
+- name: List neutron network agents
+  ansible.builtin.shell: |
+    openstack network agent list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _neutron_agent_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo neutron network agents list
+  ansible.builtin.debug:
+    msg: "{{ _neutron_agent_list.stdout_lines if _neutron_agent_list.stdout_lines is defined else _neutron_agent_list.stderr_lines }}"
 
 ...

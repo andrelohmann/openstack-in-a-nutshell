@@ -1,0 +1,92 @@
+---
+
+- name: Check if Horizon web interface is accessible
+  ansible.builtin.shell: |
+    curl -s -o /dev/null -w "%{http_code}" http://controller/horizon/
+  args:
+    executable: /bin/bash
+  register: _horizon_status_code
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Horizon status code
+  ansible.builtin.debug:
+    msg: "Horizon HTTP status code: {{ _horizon_status_code.stdout }}"
+
+- name: Check Apache error logs for Horizon issues
+  ansible.builtin.shell: |
+    grep -i 'error' /var/log/apache2/error.log | tail -20
+  args:
+    executable: /bin/bash
+  register: _apache_error_logs
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Apache error logs
+  ansible.builtin.debug:
+    msg: "{{ _apache_error_logs.stdout_lines }}"
+
+- name: Verify Apache configuration
+  ansible.builtin.shell: |
+    apache2ctl -t
+  args:
+    executable: /bin/bash
+  register: _apache_config_test
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Apache configuration test results
+  ansible.builtin.debug:
+    msg: "{{ _apache_config_test.stdout_lines if _apache_config_test.stdout_lines else _apache_config_test.stderr_lines }}"
+
+- name: Check Horizon configuration
+  ansible.builtin.shell: |
+    cat /etc/openstack-dashboard/local_settings.py | grep -E '(ALLOWED_HOSTS|OPENSTACK_HOST|DEBUG)'
+  args:
+    executable: /bin/bash
+  register: _horizon_config
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Horizon configuration
+  ansible.builtin.debug:
+    msg: "{{ _horizon_config.stdout_lines }}"
+
+- name: Check Apache virtual host configuration for Horizon
+  ansible.builtin.shell: |
+    ls -la /etc/apache2/sites-enabled/ && cat /etc/apache2/sites-enabled/*horizon* 2>/dev/null || echo "No horizon-specific config found"
+  args:
+    executable: /bin/bash
+  register: _apache_vhost_config
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Apache virtual host configuration
+  ansible.builtin.debug:
+    msg: "{{ _apache_vhost_config.stdout_lines }}"
+
+- name: Check Horizon login page content
+  ansible.builtin.shell: |
+    curl -s http://controller/horizon/ | grep -q "OpenStack Dashboard" && echo "Login page contains 'OpenStack Dashboard'" || echo "ERROR: Could not find expected content"
+  args:
+    executable: /bin/bash
+  register: _horizon_content_check
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Horizon content check result
+  ansible.builtin.debug:
+    msg: "{{ _horizon_content_check.stdout_lines }}"
+
+- name: Check Horizon redirect from root URL
+  ansible.builtin.shell: |
+    curl -s -I http://controller/ | grep -q "Location: /horizon/" && echo "Root URL correctly redirects to /horizon/" || echo "ERROR: Root URL doesn't redirect to /horizon/"
+  args:
+    executable: /bin/bash
+  register: _horizon_redirect_check
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Horizon redirect check result
+  ansible.builtin.debug:
+    msg: "{{ _horizon_redirect_check.stdout_lines }}"

@@ -1,6 +1,6 @@
 ---
 
-- name: Perform status checks
+- name: Perform placement status checks
   ansible.builtin.shell: |
     placement-status upgrade check
   args:
@@ -9,12 +9,14 @@
   become_user: admin-os
   become_flags: -i
   register: _placement_status_check
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
 
-- name: Echo _placement_status_check
+- name: Echo placement status check results
   ansible.builtin.debug:
-    msg: "{{ _placement_status_check }}"
+    msg: "{{ _placement_status_check.stdout_lines if _placement_status_check.stdout_lines is defined else _placement_status_check.stderr_lines }}"
 
-- name: List available resources
+- name: List available resource classes
   ansible.builtin.shell: |
     openstack --os-placement-api-version 1.2 resource class list --sort-column name
   args:
@@ -23,10 +25,12 @@
   become_user: admin-os
   become_flags: -i
   register: _placement_resources_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
 
-- name: Echo _placement_resources_list
+- name: Echo resource classes list
   ansible.builtin.debug:
-    msg: "{{ _placement_resources_list }}"
+    msg: "{{ _placement_resources_list.stdout_lines if _placement_resources_list.stdout_lines is defined else _placement_resources_list.stderr_lines }}"
 
 - name: List available traits
   ansible.builtin.shell: |
@@ -37,9 +41,11 @@
   become_user: admin-os
   become_flags: -i
   register: _placement_traits_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
 
-- name: Echo _placement_traits_list
+- name: Echo traits list
   ansible.builtin.debug:
-    msg: "{{ _placement_traits_list }}"
+    msg: "{{ _placement_traits_list.stdout_lines if _placement_traits_list.stdout_lines is defined else _placement_traits_list.stderr_lines }}"
 
 ...

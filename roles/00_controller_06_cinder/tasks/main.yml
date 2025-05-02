@@ -13,8 +13,8 @@
 - name: Install cinder
   ansible.builtin.include_tasks: cinder.yml
 
-#- name: Validate cinder
-#  ansible.builtin.include_tasks: tests.yml
-#  when: RUN_TESTS
+- name: Validate cinder
+  ansible.builtin.include_tasks: tests.yml
+  when: RUN_TESTS
 
 ...

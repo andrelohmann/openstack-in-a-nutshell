@@ -1,5 +1,13 @@
 ---
 
+- name: Check if cirros image file exists
+  ansible.builtin.stat:
+    path: /home/admin-os/cirros-0.4.0-x86_64-disk.img
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: cirros_file
+
 - name: Download the cirros image
   ansible.builtin.get_url:
     url: http://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
@@ -7,6 +15,20 @@
   become: true
   become_user: admin-os
   become_flags: -i
+  when: not cirros_file.stat.exists
+  register: cirros_download
+
+- name: Check if openstack image "cirros" exists
+  ansible.builtin.shell: |
+    openstack image show cirros 2>/dev/null || echo "NOT_FOUND"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: cirros_image_check
+  changed_when: false
+  failed_when: false
 
 - name: Upload the image to the Image service with openstack cli
   ansible.builtin.shell: |
@@ -17,10 +39,11 @@
   become_user: admin-os
   become_flags: -i
   register: _openstack_image_create
+  when: '"NOT_FOUND" in cirros_image_check.stdout'
 
-- name: Echo _openstack_image_create
+- name: Echo image creation result (openstack cli)
   ansible.builtin.debug:
-    msg: "{{ _openstack_image_create }}"
+    msg: "{{ 'Image cirros was created' if (_openstack_image_create is defined and _openstack_image_create.changed) else 'Image cirros already exists' }}"
 
 - name: List the image with openstack cli
   ansible.builtin.shell: |
@@ -31,10 +54,23 @@
   become_user: admin-os
   become_flags: -i
   register: _openstack_image_list
+  changed_when: false
 
-- name: Echo _openstack_image_list
+- name: Echo image list (openstack cli)
   ansible.builtin.debug:
-    msg: "{{ _openstack_image_list }}"
+    msg: "{{ _openstack_image_list.stdout_lines }}"
+
+- name: Check if glance image "cirros2" exists
+  ansible.builtin.shell: |
+    glance image-show cirros2 2>/dev/null || echo "NOT_FOUND"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: cirros2_image_check
+  changed_when: false
+  failed_when: false
 
 - name: Upload the image to the Image service with glance cli
   ansible.builtin.shell: |
@@ -45,10 +81,11 @@
   become_user: admin-os
   become_flags: -i
   register: _glance_image_create
+  when: '"NOT_FOUND" in cirros2_image_check.stdout'
 
-- name: Echo _glance_image_create
+- name: Echo image creation result (glance cli)
   ansible.builtin.debug:
-    msg: "{{ _glance_image_create }}"
+    msg: "{{ 'Image cirros2 was created' if (_glance_image_create is defined and _glance_image_create.changed) else 'Image cirros2 already exists' }}"
 
 - name: List the image with glance cli
   ansible.builtin.shell: |
@@ -59,9 +96,10 @@
   become_user: admin-os
   become_flags: -i
   register: _glance_image_list
+  changed_when: false
 
-- name: Echo _glance_image_list
+- name: Echo image list (glance cli)
   ansible.builtin.debug:
-    msg: "{{ _glance_image_list }}"
+    msg: "{{ _glance_image_list.stdout_lines }}"
 
 ...

@@ -3,7 +3,7 @@ configs:
   # Select the ansible version
   ansible_version: latest
   # Some tests are integrated into the ansible playbooks
-  run_tests: false
+  run_tests: true
   # Vagrant Image
   #vagrant_image: "ubuntu/jammy64"
   vagrant_image: "bento/ubuntu-24.04"
@@ -15,14 +15,14 @@ configs:
       autostart: true
       memory: "6144"
       cpus: "2"
-      disk_size: "20GB"
+      disk_size: "50GB"
       internal_ip: "10.0.0.11"
       domain: controller
       aliases:
       - controller.os.lokal
     # Compute Node - Neutron / Nova
     compute1:
-      autostart: true
+      autostart: false
       memory: "8192"
       cpus: "4"
       disk_size: "100GB"
@@ -32,7 +32,7 @@ configs:
       - compute1.os.lokal
     # Block Storage Node - Cinder
     block1:
-      autostart: true
+      autostart: false
       memory: "2048"
       cpus: "2"
       disk_size: "10GB"

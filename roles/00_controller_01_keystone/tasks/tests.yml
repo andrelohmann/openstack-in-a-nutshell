@@ -1,5 +1,16 @@
 ---
 
+- name: Check if example domain exists
+  ansible.builtin.shell: |
+    openstack domain show example 2>/dev/null || echo "NOT_FOUND"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: domain_check
+  changed_when: false
+
 - name: Create the example domain
   ansible.builtin.shell: |
     openstack domain create --description "An Example Domain" example
@@ -9,10 +20,22 @@
   become_user: admin-os
   become_flags: -i
   register: _openstack_domain_create
+  when: '"NOT_FOUND" in domain_check.stdout'
 
-- name: Echo _openstack_domain_create
+- name: Echo domain creation result
   ansible.builtin.debug:
-    msg: "{{ _openstack_domain_create }}"
+    msg: "{{ 'Domain created' if (_openstack_domain_create is defined and _openstack_domain_create.changed) else 'Domain already exists' }}"
+
+- name: Check if demo project exists
+  ansible.builtin.shell: |
+    openstack project show --domain example myproject 2>/dev/null || echo "NOT_FOUND"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: project_check
+  changed_when: false
 
 - name: Create the demo project
   ansible.builtin.shell: |
@@ -23,10 +46,22 @@
   become_user: admin-os
   become_flags: -i
   register: _openstack_project_create
+  when: '"NOT_FOUND" in project_check.stdout'
 
-- name: Echo _openstack_project_create
+- name: Echo project creation result
   ansible.builtin.debug:
-    msg: "{{ _openstack_project_create }}"
+    msg: "{{ 'Project created' if (_openstack_project_create is defined and _openstack_project_create.changed) else 'Project already exists' }}"
+
+- name: Check if demo user exists
+  ansible.builtin.shell: |
+    openstack user show --domain example myuser 2>/dev/null || echo "NOT_FOUND"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: user_check
+  changed_when: false
 
 - name: Create demo user
   ansible.builtin.expect:
@@ -39,10 +74,22 @@
   become_user: admin-os
   become_flags: -i
   register: _openstack_user_create
+  when: '"NOT_FOUND" in user_check.stdout'
 
-- name: Echo _openstack_user_create
+- name: Echo user creation result
   ansible.builtin.debug:
-    msg: "{{ _openstack_user_create }}"
+    msg: "{{ 'User created' if (_openstack_user_create is defined and _openstack_user_create.changed) else 'User already exists' }}"
+
+- name: Check if role exists
+  ansible.builtin.shell: |
+    openstack role show myrole 2>/dev/null || echo "NOT_FOUND"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: role_check
+  changed_when: false
 
 - name: Create the demo role
   ansible.builtin.shell: |
@@ -53,10 +100,23 @@
   become_user: admin-os
   become_flags: -i
   register: _openstack_role_create
+  when: '"NOT_FOUND" in role_check.stdout'
 
-- name: Echo _openstack_role_create
+- name: Echo role creation result
   ansible.builtin.debug:
-    msg: "{{ _openstack_role_create }}"
+    msg: "{{ 'Role created' if (_openstack_role_create is defined and _openstack_role_create.changed) else 'Role already exists' }}"
+
+- name: Check if role assignment exists
+  ansible.builtin.shell: |
+    openstack role assignment list --names --user myuser --project myproject --role myrole -f value | grep -q myrole || echo "NOT_FOUND"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: role_assignment_check
+  changed_when: false
+  failed_when: false
 
 - name: Add project and user to role
   ansible.builtin.shell: |
@@ -67,9 +127,10 @@
   become_user: admin-os
   become_flags: -i
   register: _openstack_role_add
+  when: role_assignment_check.rc != 0 or "NOT_FOUND" in role_assignment_check.stdout
 
-- name: Echo _openstack_role_add
+- name: Echo role assignment result
   ansible.builtin.debug:
-    msg: "{{ _openstack_role_add }}"
+    msg: "{{ 'Role assignment created' if (_openstack_role_add is defined and _openstack_role_add.changed) else 'Role assignment already exists' }}"
 
 ...

@@ -13,8 +13,8 @@
 - name: Install neutron
   ansible.builtin.include_tasks: neutron.yml
 
-#- name: Validate neutron
-#  ansible.builtin.include_tasks: tests.yml
-#  when: RUN_TESTS
+- name: Validate neutron
+  ansible.builtin.include_tasks: tests.yml
+  when: RUN_TESTS
 
 ...

@@ -7,4 +7,8 @@
 - name: Install horizon
   ansible.builtin.include_tasks: horizon.yml
 
+- name: Validate horizon
+  ansible.builtin.include_tasks: tests.yml
+  when: RUN_TESTS
+
 ...

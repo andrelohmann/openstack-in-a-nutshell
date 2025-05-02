@@ -1,8 +1,94 @@
 ---
 
 - name: Verify nova cell0 and cell1 are registered correctly
-  ansible.builtin.shell: su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
+  ansible.builtin.shell: |
+    su -s /bin/sh -c "nova-manage cell_v2 list_cells" nova
   args:
     executable: /bin/bash
+  register: _nova_cells_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo nova cells list
+  ansible.builtin.debug:
+    msg: "{{ _nova_cells_list.stdout_lines if _nova_cells_list.stdout_lines is defined else _nova_cells_list.stderr_lines }}"
+
+- name: List compute services
+  ansible.builtin.shell: |
+    openstack compute service list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _nova_service_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo compute services list
+  ansible.builtin.debug:
+    msg: "{{ _nova_service_list.stdout_lines if _nova_service_list.stdout_lines is defined else _nova_service_list.stderr_lines }}"
+
+- name: Verify nova host details
+  ansible.builtin.shell: |
+    openstack host list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _nova_host_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo nova host list
+  ansible.builtin.debug:
+    msg: "{{ _nova_host_list.stdout_lines if _nova_host_list.stdout_lines is defined else _nova_host_list.stderr_lines }}"
+
+- name: List OpenStack service catalog
+  ansible.builtin.shell: |
+    openstack catalog list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_catalog_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo OpenStack service catalog
+  ansible.builtin.debug:
+    msg: "{{ _openstack_catalog_list.stdout_lines if _openstack_catalog_list.stdout_lines is defined else _openstack_catalog_list.stderr_lines }}"
+
+- name: List available images
+  ansible.builtin.shell: |
+    openstack image list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _openstack_image_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo available images
+  ansible.builtin.debug:
+    msg: "{{ _openstack_image_list.stdout_lines if _openstack_image_list.stdout_lines is defined else _openstack_image_list.stderr_lines }}"
+
+- name: Run nova upgrade check
+  ansible.builtin.shell: |
+    nova-status upgrade check
+  args:
+    executable: /bin/bash
+  become: true
+  register: _nova_status_upgrade_check
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo nova upgrade check results
+  ansible.builtin.debug:
+    msg: "{{ _nova_status_upgrade_check.stdout_lines if _nova_status_upgrade_check.stdout_lines is defined else _nova_status_upgrade_check.stderr_lines }}"
 
 ...

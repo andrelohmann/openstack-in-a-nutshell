@@ -14,11 +14,17 @@
     - memcached
     - python3-memcache
 
-- name: Make memcahed listen on public interface
+- name: Uncomment IPv6 listening interface
+  ansible.builtin.lineinfile:
+    path: /etc/memcached.conf
+    regexp: '^-l ::1'
+    line: '#-l ::1'
+
+- name: Make memcached listen on all IPv4 interfaces
   ansible.builtin.lineinfile:
     path: /etc/memcached.conf
     regexp: '^-l '
-    line: -l 0.0.0.0
+    line: '-l 0.0.0.0'
 
 - name: Restart memcached
   ansible.builtin.systemd:
