@@ -45,9 +45,6 @@
   - { section: "securitygroup", option: "enable_security_group", value: "true" }
   - { section: "securitygroup", option: "firewall_driver", value: "openvswitch" }
 
-
-
-
 - name: Configure neutron connection
   ansible.builtin.ini_file:
     path: /etc/neutron/neutron.conf
