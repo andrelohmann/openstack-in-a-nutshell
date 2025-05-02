@@ -1,9 +1,47 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Modelling Container",
+	"name": "Ubuntu",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image":"plantuml/plantuml:latest",
+	// "image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"build": { 
+		"context": "..",
+		"dockerfile": "Dockerfile"
+	},
+	//"features": {
+	//	"ghcr.io/devcontainers-contrib/features/ansible:2": {
+	//		"version": "latest"
+	//	}
+	//},
+	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
+	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
+	// "dockerComposeFile": [
+	//	 "docker-compose.yml"
+	// ],
+	
+	// The optional 'workspaceFolder' property is the path VS Code should open by default when
+	// connected. This is typically a file mount in .devcontainer/docker-compose.yml
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	
+	"mounts": [
+		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+	],
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"redhat.ansible",
+				"mattiasbaake.vscode-snippets-for-ansible"
+			],
+			"settings": {
+        		"terminal.integrated.shell.linux": "/bin/bash",
+				"ansible.python.interpreterPath": "/usr/bin/python3"
+    		}
+		}
+	},
+
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 
@@ -12,25 +50,18 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
+	"postCreateCommand": "bash scripts/install_dependencies.sh",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
 
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"jebbs.plantuml"								// PlantUML extension,
-			],
-			"settings": {
-				"plantuml.exportFormat": "png", 				// Default export format
-				"plantuml.exportOutDir": "out", 			// Default export folder
-				"plantuml.diagramsRoot": "diagrams",
-				"plantuml.render": "Local",
-				"plantuml.jar": "/opt/plantuml.jar"
-			}
-		}
-	}
-
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
+	"remoteUser": "vscode",
+	
+	"runArgs": [
+		"--cpus=2",
+		"--memory=4g",
+		"--memory-swap=8g"
+	]
 }

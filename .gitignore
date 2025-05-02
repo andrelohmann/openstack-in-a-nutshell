@@ -1,2 +1,5 @@
 .vagrant
 config.override.yml
+/roles/andrelohmann*
+/collections
+.DS_Store

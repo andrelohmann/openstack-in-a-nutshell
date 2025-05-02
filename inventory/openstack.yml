@@ -1,0 +1,17 @@
+---
+
+openstack-controller:
+  hosts:
+    controller:
+      ansible_host: controller.os.lokal
+      ansible_user: vagrant
+openstack-compute:
+  hosts:
+    compute1:
+      ansible_host: compute1.os.lokal
+      ansible_user: vagrant
+    compute2:
+      ansible_host: compute2.os.lokal
+      ansible_user: vagrant
+
+...

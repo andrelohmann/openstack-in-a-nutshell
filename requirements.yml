@@ -1,5 +1,7 @@
 ---
 
+roles: []
+
 collections:
 - community.mysql
 - community.general
