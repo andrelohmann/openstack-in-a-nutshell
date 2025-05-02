@@ -1,62 +1,57 @@
 ---
-- hosts: all
+- name: Provision Contriller
+  hosts: controller
   gather_facts: true
   become: true
-  become_method: sudo
+  become_method: ansible.builtin.sudo
 
   pre_tasks:
 
-  - name: Check for file ansible_vars.yml
-    ansible.builtin.stat:
-      path: ansible_vars.yml
-    register: stat_ansible_vars
+    - name: Load ansible vars, if existent
+      ansible.builtin.include_vars:
+        file: ansible_vars.yml
 
-  - name: load ansible vars, if existent
-    ansible.builtin.include_vars:
-      file: ansible_vars.yml
-    when: stat_ansible_vars.stat.exists
+    - name: Set the hostname
+      ansible.builtin.hostname:
+        name: controller
 
-  - name: Set the hostname
-    ansible.builtin.hostname:
-      name: controller
+    - name: Update hosts file
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127.0.0.1'
+        line: 127.0.0.1 localhost controller
 
-  - name: Update hosts file
-    ansible.builtin.lineinfile:
-      path: /etc/hosts
-      regexp: '^127.0.0.1'
-      line: 127.0.0.1 localhost controller
+    - name: Install dependencies packages
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        state: present
+        dpkg_options: 'force-confnew,force-confdef'
+        autoclean: true
+        autoremove: true
+        update_cache: true
+        cache_valid_time: 3600
+      vars:
+        packages:
+          - curl
+          - jq
 
-  - name: Install dependencies packages
-    ansible.builtin.apt:
-      name: "{{ packages }}"
-      state: present
-      dpkg_options: 'force-confnew,force-confdef'
-      autoclean: true
-      autoremove: true
-      update_cache: true
-      cache_valid_time: 3600
-    vars:
-      packages:
-      - curl
-      - jq
-
-  #- name: Install cloud-archive:epoxy
-  #  command: add-apt-repository cloud-archive:epoxy -y
-  #- name: Install cloud-archive:caracal
-  #  command: add-apt-repository cloud-archive:caracal -y
+  # - name: Install cloud-archive:epoxy
+  #   command: add-apt-repository cloud-archive:epoxy -y
+  # - name: Install cloud-archive:caracal
+  #   command: add-apt-repository cloud-archive:caracal -y
   # - name: Install cloud-archive:bobcat
   #   command: add-apt-repository cloud-archive:bobcat -y
   # - name: Install cloud-archive:antelope
   #   command: add-apt-repository cloud-archive:antelope -y
 
   roles:
-  - 00_controller_00_dependencies # Install dependencies
-  - 00_controller_01_keystone # Install keystone - auth service
-  - 00_controller_02_glance # Install glance - image service
-  - 00_controller_03_placement # Install placement - resource tracking service
-  - 00_controller_04_neutron # Install neutron - networking service
-  - 00_controller_05_nova # Install nova - compute service
-  - 00_controller_06_cinder # Install cinder - block storage service
-  - 00_controller_07_horizon # Install horizon - web dashboard
+    - 00_controller_00_dependencies # Install dependencies
+    - 00_controller_01_keystone # Install keystone - auth service
+    - 00_controller_02_glance # Install glance - image service
+    - 00_controller_03_placement # Install placement - resource tracking service
+    - 00_controller_04_neutron # Install neutron - networking service
+    - 00_controller_05_nova # Install nova - compute service
+    - 00_controller_06_cinder # Install cinder - block storage service
+    - 00_controller_07_horizon # Install horizon - web dashboard
 
 ...

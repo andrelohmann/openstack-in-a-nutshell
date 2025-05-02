@@ -4,6 +4,15 @@ Documentation and ansible role collection to setup an openstack environment from
 
 ## Usage
 
+Configure the virtualbox network
+
+/etc/vbox/networks.conf
+
+```
+* 10.0.0.0/16
+* 192.168.56.0/21
+```
+
 Just clone the repo and run
 
 ```
@@ -53,8 +62,6 @@ Login:
   * [Software and Components overview](https://www.openstack.org/software/)
 
 ## Network
-
-
 
 The simple [Host Networking](https://docs.openstack.org/install-guide/environment-networking.html) Stack is chosen, which consists of a management and a provider network. There are two options available, provider network and self-service network. The ansible role, installing neutron, is configured to deploy the self-service network option.
 

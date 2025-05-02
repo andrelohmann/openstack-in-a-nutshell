@@ -23,7 +23,7 @@ RUN apt upgrade -y
 
 RUN apt update \
     && apt install -y sudo wget curl nano git \
-    && apt install -y python3-pip pipx sshpass
+    && apt install -y python3-pip pipx sshpass python3-jmespath
 
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd -s /bin/bash --uid $USER_UID --gid $USERNAME -m $USERNAME \
@@ -34,4 +34,4 @@ COPY requirements.txt .
     
 RUN pip3 install -r  requirements.txt --break-system-packages --root-user-action=ignore
 
-USER vscode
+#USER vscode

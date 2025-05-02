@@ -1,5 +1,7 @@
 ---
-
+# This file contains the variables used in the Ansible playbooks for deploying OpenStack
+# The variables are used in the playbooks and roles
+RUN_TESTS: true
 # Database password of the root user
 ROOT_DBPASS: S3cr3tDB
 # https://docs.openstack.org/install-guide/environment-security.html
@@ -33,13 +35,14 @@ CINDER_DBPASS: C1nd3rDB
 CINDER_PASS: C1nd3r
 
 # IPs of the management Network
-MGT_IP_CONTROLLER: 10.0.0.11
-MGT_IP_COMPUTE1: 10.0.0.21
-MGT_IP_BLOCK1: 10.0.0.31
+MGT_IP_CONTROLLER: 10.0.0.10
+MGT_IP_COMPUTE1: 10.0.0.11
+MGT_IP_COMPUTE2: 10.0.0.12
 
 # Chrony - NTP Server
 NTP_SERVER: pool.ntp.org
 INTERNAL_NETWORK: 10.0.0.0/24
+CEPH_NETWORK: 10.0.1.0/24
 
 # Secret for the metadata proxy
 METADATA_SECRET: M3taDataS3cr3t

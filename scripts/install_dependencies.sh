@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "10.0.0.10 controller controller.os.lokal" >> /etc/hosts
+echo "10.0.0.11 compute1 compute1.os.lokal" >> /etc/hosts
+echo "10.0.0.12 compute2 compute2.os.lokal" >> /etc/hosts
+
 # Download and add certificate
 sudo wget --no-check-certificate https://ca.cc.lan/root_ca.der -O /root/root-ca.der
 sudo openssl x509 -inform der -outform pem -in /root/root-ca.der -out /root/root-ca.crt

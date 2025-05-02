@@ -1,30 +1,24 @@
 ---
-- hosts: all
+- hosts: openstack-compute
   gather_facts: true
   become: true
   become_method: sudo
 
   pre_tasks:
 
-  - name: Check for file ansible_vars.yml
-    ansible.builtin.stat:
-      path: ansible_vars.yml
-    register: stat_ansible_vars
-
-  - name: load ansible vars, if existent
+  - name: Load ansible vars, if existent
     ansible.builtin.include_vars:
       file: ansible_vars.yml
-    when: stat_ansible_vars.stat.exists
 
   - name: Set the hostname
     ansible.builtin.hostname:
-      name: compute1
+      name: "{{ ansible_hostname }}"
 
   - name: Update hosts file
     ansible.builtin.lineinfile:
       path: /etc/hosts
       regexp: '^127.0.0.1'
-      line: 127.0.0.1 localhost compute1
+      line: "127.0.0.1 localhost {{ ansible_hostname }}"
 
   - name: Install dependencies packages
     ansible.builtin.apt:
@@ -50,9 +44,10 @@
   #   command: add-apt-repository cloud-archive:antelope -y
 
   roles:
-  - 01_compute1_00_dependencies
-  - 01_compute1_01_neutron
-  - 01_compute1_02_nova
+  - 01_compute_00_dependencies
+  - 01_compute_01_neutron
+  - 01_compute_02_nova
+  - 01_compute_03_cinder
 
   tasks:
 

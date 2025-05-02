@@ -16,40 +16,32 @@ configs:
       memory: "6144"
       cpus: "2"
       disk_size: "50GB"
-      internal_ip: "10.0.0.11"
+      internal_ip: "10.0.0.10"
+      ceph_ip: "10.0.1.10"
       domain: controller
       aliases:
       - controller.os.lokal
-    # Compute Node - Neutron / Nova
+    # Compute Node - Neutron / Nova / Cinder
     compute1:
       autostart: false
       memory: "8192"
       cpus: "4"
-      disk_size: "100GB"
-      internal_ip: "10.0.0.21"
+      disk_size: "50GB"
+      storage_disk_size: "100GB"
+      internal_ip: "10.0.0.11"
+      ceph_ip: "10.0.1.11"
       domain: compute1
       aliases:
       - compute1.os.lokal
-    # Block Storage Node - Cinder
-    block1:
+    compute2:
       autostart: false
-      memory: "2048"
-      cpus: "2"
-      disk_size: "10GB"
+      memory: "8192"
+      cpus: "4"
+      disk_size: "50GB"
       storage_disk_size: "100GB"
-      internal_ip: "10.0.0.31"
-      domain: block1
+      internal_ip: "10.0.0.12"
+      ceph_ip: "10.0.1.12"
+      domain: compute1
       aliases:
-      - block1.os.lokal
-    # Object Storage Node - Swift
-    #object1:
-    #  autostart: false
-    #  memory: "2048"
-    #  cpus: "2"
-    #  disk_size: "20GB"
-    #  storage_disk_size: "100GB"
-    #  internal_ip: "10.0.0.41"
-    #  domain: object1
-    #  aliases:
-    #  - object1.os.lokal
+      - compute1.os.lokal
 ...
