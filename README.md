@@ -700,9 +700,66 @@ sudo ceph mon stat # Should show quorum [0] compute1
 ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo ceph mon add compute1 10.0.1.11'
 ```
 
+#### Create 'done' file and Start Service on the New Node (compute1)
+
+```
+# On your external node, SSH into compute1
+
+# Create systemd 'done' file for compute1 monitor
+# Signal systemd that this monitor is configured
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo touch /var/lib/ceph/mon/ceph-compute1/done'
+
+# Ensure systemd done file ownership is correct
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/done'
 
 
+# Start Ceph Monitor service on compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo systemctl enable ceph-mon@compute1.service'
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo systemctl start ceph-mon@compute1.service'
+```
 
+#### Add Monitor to the Quorum (from controller)
+
+```
+# On your external node, SSH into controller
+# This tells the running cluster about the new monitor
+# Note: This also requires permissions on controller to run ceph commands.
+# This command should ideally be run AFTER the service on compute1 has started
+# and is attempting to join. You might need to wait a few seconds between starting service and running 'mon add'.
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo ceph mon add compute1 10.0.1.11'
+```
+
+#### Following error occures
+
+```
+andre@t480:~/Workspace/openstack-in-a-nutshell$ # On your external node, SSH into controller
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal '
+sudo systemctl status ceph-mon@compute1.service # Check service status
+sudo ceph mon stat # Should show quorum [0] compute1
+'
+# Look for 'mon: 1 daemons, quorum 0 comoute1'
+× ceph-mon@compute1.service - Ceph cluster monitor daemon
+     Loaded: loaded (/usr/lib/systemd/system/ceph-mon@.service; enabled; preset: enabled)
+     Active: failed (Result: exit-code) since Tue 2025-05-13 18:29:56 UTC; 1min 54s ago
+   Duration: 102ms
+    Process: 6307 ExecStart=/usr/bin/ceph-mon -f --cluster ${CLUSTER} --id compute1 --setuser ceph --setgroup ceph (code=exited, status=1/FAILURE)
+   Main PID: 6307 (code=exited, status=1/FAILURE)
+        CPU: 95ms
+
+May 13 18:29:56 compute1 systemd[1]: ceph-mon@compute1.service: Scheduled restart job, restart counter is at 5.
+May 13 18:29:56 compute1 systemd[1]: ceph-mon@compute1.service: Start request repeated too quickly.
+May 13 18:29:56 compute1 systemd[1]: ceph-mon@compute1.service: Failed with result 'exit-code'.
+May 13 18:29:56 compute1 systemd[1]: Failed to start ceph-mon@compute1.service - Ceph cluster monitor daemon.
+2025-05-13T18:31:51.071+0000 7b2a8d2006c0 -1 auth: unable to find a keyring on /etc/ceph/ceph.client.admin.keyring: (2) No such file or directory
+2025-05-13T18:31:51.071+0000 7b2a8d2006c0 -1 AuthRegistry(0x7b2a880650b0) no keyring found at /etc/ceph/ceph.client.admin.keyring, disabling cephx
+2025-05-13T18:31:51.076+0000 7b2a8d2006c0 -1 auth: unable to find a keyring on /etc/ceph/ceph.client.admin.keyring: (2) No such file or directory
+2025-05-13T18:31:51.076+0000 7b2a8d2006c0 -1 AuthRegistry(0x7b2a88069568) no keyring found at /etc/ceph/ceph.client.admin.keyring, disabling cephx
+2025-05-13T18:31:51.077+0000 7b2a8d2006c0 -1 auth: unable to find a keyring on /etc/ceph/ceph.client.admin.keyring: (2) No such file or directory
+2025-05-13T18:31:51.077+0000 7b2a8d2006c0 -1 AuthRegistry(0x7b2a8d1ff3d0) no keyring found at /etc/ceph/ceph.client.admin.keyring, disabling cephx
+2025-05-13T18:36:51.080+0000 7b2a8d2006c0  0 monclient(hunting): authenticate timed out after 300
+2025-05-13T18:36:51.080+0000 7b2a8d2006c0 -1 monclient(hunting): authenticate NOTE: no keyring found; disabled cephx authentication
+[errno 110] RADOS timed out (error connecting to the cluster)
+```
 
 
 
