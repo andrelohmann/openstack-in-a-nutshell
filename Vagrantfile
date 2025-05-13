@@ -58,9 +58,13 @@ Vagrant.configure("2") do |config|
     # OpenStack Provider Network
     b.vm.network "public_network"
     # OpenStack Management Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['internal_ip'], netmask: "255.255.255.0"
-    # OpenStack Ceph Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['ceph_ip'], netmask: "255.255.255.0"
+    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack Ceph Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['ceph_public_ip'], netmask: "255.255.255.0"
+    # OpenStack Ceph Cluster Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['ceph_cluster_ip'], netmask: "255.255.255.0"
+    # OpenStack SDN Underlay Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_sdn_ip'], netmask: "255.255.255.0"
 
     # Hostname Domains
     b.vm.hostname = vagrant_config['vms']['controller']['domain']
@@ -108,13 +112,18 @@ Vagrant.configure("2") do |config|
     #  b.vm.disk :disk, size: "10GB", name: "disk-#{i}"
     #end
     b.vm.disk :disk, size: vagrant_config['vms']['compute1']['storage_disk_size'], name: "disk-0"
+    b.vm.disk :disk, size: vagrant_config['vms']['compute1']['storage_disk_size'], name: "disk-1"
 
     # OpenStack Provider Network
     b.vm.network "public_network"
     # OpenStack Management Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['internal_ip'], netmask: "255.255.255.0"
-    # OpenStack Ceph Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['ceph_ip'], netmask: "255.255.255.0"
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack Ceph Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['ceph_public_ip'], netmask: "255.255.255.0"
+    # OpenStack Ceph Cluster Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['ceph_cluster_ip'], netmask: "255.255.255.0"
+    # OpenStack SDN Underlay Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_sdn_ip'], netmask: "255.255.255.0"
 
     # Hostname Domains
     b.vm.hostname = vagrant_config['vms']['compute1']['domain']
@@ -162,13 +171,18 @@ Vagrant.configure("2") do |config|
     #  b.vm.disk :disk, size: "10GB", name: "disk-#{i}"
     #end
     b.vm.disk :disk, size: vagrant_config['vms']['compute2']['storage_disk_size'], name: "disk-0"
+    b.vm.disk :disk, size: vagrant_config['vms']['compute2']['storage_disk_size'], name: "disk-1"
 
     # OpenStack Provider Network
     b.vm.network "public_network"
     # OpenStack Management Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['internal_ip'], netmask: "255.255.255.0"
-    # OpenStack Ceph Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['ceph_ip'], netmask: "255.255.255.0"
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack Ceph Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['ceph_public_ip'], netmask: "255.255.255.0"
+    # OpenStack Ceph Cluster Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['ceph_cluster_ip'], netmask: "255.255.255.0"
+    # OpenStack SDN Underlay Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_sdn_ip'], netmask: "255.255.255.0"
 
     # Hostname Domains
     b.vm.hostname = vagrant_config['vms']['compute2']['domain']

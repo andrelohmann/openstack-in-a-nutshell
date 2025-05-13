@@ -22,7 +22,7 @@ ENV LANGUAGE en_US.UTF-8
 RUN apt upgrade -y
 
 RUN apt update \
-    && apt install -y sudo wget curl nano git \
+    && apt install -y sudo wget curl nano git iputils-ping \
     && apt install -y python3-pip pipx sshpass python3-jmespath
 
 RUN groupadd --gid $USER_GID $USERNAME \

@@ -1,0 +1,10 @@
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    msg: "Installing Ceph - the OpenStack Storage Backend"
+
+- name: Install ceph
+  ansible.builtin.include_tasks: ceph.yml
+
+...

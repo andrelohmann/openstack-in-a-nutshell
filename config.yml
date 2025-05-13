@@ -16,32 +16,38 @@ configs:
       memory: "6144"
       cpus: "2"
       disk_size: "50GB"
-      internal_ip: "10.0.0.10"
-      ceph_ip: "10.0.1.10"
+      os_mgt_ip: "10.0.0.10"
+      ceph_public_ip: "10.0.1.10"
+      ceph_cluster_ip: "10.0.2.10"
+      os_sdn_ip: "10.0.3.10"
       domain: controller
       aliases:
       - controller.os.lokal
     # Compute Node - Neutron / Nova / Cinder
     compute1:
-      autostart: false
+      autostart: true
       memory: "8192"
       cpus: "4"
       disk_size: "50GB"
       storage_disk_size: "100GB"
-      internal_ip: "10.0.0.11"
-      ceph_ip: "10.0.1.11"
+      os_mgt_ip: "10.0.0.11"
+      ceph_public_ip: "10.0.1.11"
+      ceph_cluster_ip: "10.0.2.11"
+      os_sdn_ip: "10.0.3.11"
       domain: compute1
       aliases:
       - compute1.os.lokal
     compute2:
-      autostart: false
+      autostart: true
       memory: "8192"
       cpus: "4"
       disk_size: "50GB"
       storage_disk_size: "100GB"
-      internal_ip: "10.0.0.12"
-      ceph_ip: "10.0.1.12"
-      domain: compute1
+      os_mgt_ip: "10.0.0.12"
+      ceph_public_ip: "10.0.1.12"
+      ceph_cluster_ip: "10.0.2.12"
+      os_sdn_ip: "10.0.3.12"
+      domain: compute2
       aliases:
-      - compute1.os.lokal
+      - compute2.os.lokal
 ...

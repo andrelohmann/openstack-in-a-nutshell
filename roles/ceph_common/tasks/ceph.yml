@@ -1,0 +1,44 @@
+---
+
+- name: Install ceph packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - ceph-common
+
+## Alternate Approach to create keyrings
+# ceph-authtool \
+# --create-keyring /etc/ceph/ceph.client.admin.keyring \
+# --gen-key -n client.admin \
+# --cap mon 'allow *' \
+# --cap mgr 'allow *' \
+# --cap osd 'allow *' \
+# --cap mds 'allow *'
+#
+# ceph-authtool \
+# --create-keyring /opt/ceph.mon.keyring \
+# --gen-key -n mon. \
+# --cap mon 'allow *'
+#
+# ceph-authtool \
+# /opt/ceph.mon.keyring \
+# --import-keyring /etc/ceph/ceph.client.admin.keyring
+#
+# monmaptool \
+# --create --add controller 10.0.1.10 --add compute1 10.0.1.11 --add compute2 10.0.1.12 --fsid <your_generated_fsid> /opt/monmap
+
+
+#- name: Restart apache2
+#  ansible.builtin.systemd:
+#    name: apache2.service
+#    state: restarted
+#  changed_when: false
+
+...

@@ -389,3 +389,416 @@ Also add an openstack admin user and configuration for convenience (not recommen
 
 * https://docs.openstack.org/swift/2024.1/install/
 * https://docs.openstack.org/cinder/2024.1/install/cinder-backup-install-ubuntu.html
+
+# CEPH Install Tests
+
+## Manual Installation and configuration of the three monitoring nodes
+
+### Install dependencies
+
+```
+# On your external node, SSH into controller
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo apt update && sudo apt install -y acl ceph-common ceph-mon'
+
+# On your external node, SSH into compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo apt update && sudo apt install -y acl ceph-common ceph-mon'
+
+# On your external node, SSH into compute2
+ssh -i .vagrant/machines/compute2/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute2.os.lokal 'sudo apt update && sudo apt install -y acl ceph-common ceph-mon'
+```
+
+### Create ceph.conf on all nodes
+
+```
+# On your external node, SSH into controller
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo bash -c "cat > /etc/ceph/ceph.conf << EOF
+[global]
+fsid = 7272bf23-0a44-42e6-b591-5569713531fa
+# mon_initial_members will ONLY list the node used for mkfs initially
+mon_initial_members = controller
+mon_host = 10.0.1.10,10.0.1.11,10.0.1.12 # List ALL potential mon IPs so new MONs can find cluster
+public_network = 10.0.1.0/24
+
+# Optional but good for dev/test
+osd_pool_default_size = 2
+osd_pool_default_min_size = 1
+mon_allow_pool_delete = true
+
+[client.admin]
+keyring = /etc/ceph/ceph.client.admin.keyring
+EOF
+"'
+
+# On your external node, SSH into compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo bash -c "cat > /etc/ceph/ceph.conf << EOF
+[global]
+fsid = 7272bf23-0a44-42e6-b591-5569713531fa
+# mon_initial_members is not strictly needed on nodes not doing initial mkfs
+mon_host = 10.0.1.10,10.0.1.11,10.0.1.12 # List ALL potential mon IPs so new MONs can find cluster
+public_network = 10.0.1.0/24
+
+# Optional but good for dev/test
+osd_pool_default_size = 2
+osd_pool_default_min_size = 1
+mon_allow_pool_delete = true
+
+[client.admin]
+keyring = /etc/ceph/ceph.client.admin.keyring
+EOF
+"'
+
+# On your external node, SSH into compute2
+ssh -i .vagrant/machines/compute2/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute2.os.lokal 'sudo bash -c "cat > /etc/ceph/ceph.conf << EOF
+[global]
+fsid = 7272bf23-0a44-42e6-b591-5569713531fa
+# mon_initial_members is not strictly needed on nodes not doing initial mkfs
+mon_host = 10.0.1.10,10.0.1.11,10.0.1.12 # List ALL potential mon IPs so new MONs can find cluster
+public_network = 10.0.1.0/24
+
+# Optional but good for dev/test
+osd_pool_default_size = 2
+osd_pool_default_min_size = 1
+mon_allow_pool_delete = true
+
+[client.admin]
+keyring = /etc/ceph/ceph.client.admin.keyring
+EOF
+"'
+```
+
+### Initialize the bootstrap node
+
+```
+# On your external node, SSH into controller
+
+# Generate Admin Keyring (/etc/ceph/ceph.client.admin.keyring)
+# This key is needed by 'ceph' CLI commands to talk to the cluster
+# Using 'sudo sh -c' and careful quoting
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo sh -c "ceph-authtool --create-keyring /etc/ceph/ceph.client.admin.keyring --gen-key -n client.admin --cap mon '\''allow *'\'' --cap mgr '\''allow *'\'' --cap osd '\''allow *'\'' --cap mds '\''allow *'\''"'
+
+# Ensure only root can read the admin keyring initially
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chmod 600 /etc/ceph/ceph.client.admin.keyring'
+
+# Generate temporary monitor bootstrap keyring (/tmp/ceph.mon.keyring.bootstrap)
+# This key is used by the mon daemon during mkfs
+# Using 'sudo sh -c' and careful quoting
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo sh -c "ceph-authtool --create-keyring /tmp/ceph.mon.keyring.bootstrap --gen-key -n mon. --cap mon '\''allow *'\''"'
+
+# Import admin key into the temporary monitor bootstrap keyring (so mkfs includes admin key)
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo ceph-authtool /tmp/ceph.mon.keyring.bootstrap --import-keyring /etc/ceph/ceph.client.admin.keyring'
+
+# Generate initial monmap (/tmp/monmap.initial) - ONLY includes the first monitor
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo monmaptool --create --add controller 10.0.1.10 --fsid 7272bf23-0a44-42e6-b591-5569713531fa /tmp/monmap.initial'
+
+# Ensure ceph user can read temporary files before mkfs - Change Ownership
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chown ceph:ceph /tmp/ceph.mon.keyring.bootstrap /tmp/monmap.initial'
+
+# Ensure ceph user can read temporary files before mkfs - Set Permissions (Temp key readable only by owner)
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chmod 600 /tmp/ceph.mon.keyring.bootstrap'
+
+# Ensure ceph user can read temporary files before mkfs - Set Permissions (Monmap readable by owner/group/others)
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chmod 644 /tmp/monmap.initial'
+
+# Create Monitor data directory for controller
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo mkdir -p /var/lib/ceph/mon/ceph-controller'
+
+# Ensure Monitor data directory ownership is correct
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-controller'
+
+# Initialize Monitor data store (mkfs) on controller, running as ceph user
+# This uses the temp key and monmap
+# Using 'sudo sh -c' and careful quoting around the command itself
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo sh -c '\''sudo -u ceph ceph-mon --mkfs -i controller --monmap /tmp/monmap.initial --keyring /tmp/ceph.mon.keyring.bootstrap'\'''
+
+# Create systemd 'done' file for controller monitor
+# Signal systemd that this monitor is configured
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo touch /var/lib/ceph/mon/ceph-controller/done'
+
+# Ensure systemd done file ownership is correct
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-controller/done'
+
+
+# Start Ceph Monitor service on controller
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo systemctl enable ceph-mon@controller.service'
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo systemctl start ceph-mon@controller.service'
+```
+
+### Verify the monitor
+
+```
+# On your external node, SSH into controller
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal '
+sudo systemctl status ceph-mon@controller.service # Check service status
+sleep 10 # Wait a bit
+sudo ceph mon stat # Should show quorum [0] controller
+'
+# Look for 'mon: 1 daemons, quorum 0 controller'
+```
+
+### Create a second monitor
+
+#### Prepare Data Directory on the New Monitor Node
+
+```
+
+# On your external node, SSH into compute1
+
+# Create Monitor data directory for compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo mkdir -p /var/lib/ceph/mon/ceph-compute1'
+
+# Ensure Monitor data directory ownership is correct on compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1'
+
+# Create standard subdirectories for the monitor's RocksDB data store
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo mkdir -p /var/lib/ceph/mon/ceph-compute1/store.db /var/lib/ceph/mon/ceph-compute1/store.db.log'
+
+# Ensure correct ownership and permissions for the new subdirectories
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/store.db /var/lib/ceph/mon/ceph-compute1/store.db.log'
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chmod 0750 /var/lib/ceph/mon/ceph-compute1/store.db /var/lib/ceph/mon/ceph-compute1/store.db.log'
+```
+
+#### Generate Key for the New Monitor (mon.compute1) and Get Latest Monmap (from controller)
+
+```
+
+# On your external node, SSH into controller
+
+# Generate key for mon.compute1 using the running cluster
+# Output temporary keyring for mon.compute1
+# Using 'sudo sh -c' and careful quoting around 'allow profile bootstrap-mon'
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo sh -c "ceph --cluster ceph auth get-or-create mon.compute1 mon '\''allow profile bootstrap-mon'\'' -o /tmp/ceph.mon.compute1.keyring"'
+
+# Make the temporary key readable by vagrant for scp from controller
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chown vagrant:vagrant /tmp/ceph.mon.compute1.keyring'
+
+# Get the latest monitor map from the running cluster (output to /tmp/monmap.latest)
+# This command outputs binary data
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo ceph --cluster ceph mon getmap -o /tmp/monmap.latest'
+
+# Make the temporary monmap readable by vagrant for scp from controller
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo chown vagrant:vagrant /tmp/monmap.latest'
+```
+
+#### Distribute Key and Monmap to the New Monitor Node (compute1)
+
+
+```
+# On your external node (where you run ssh)
+
+# Copy the temporary key from controller to your external node
+scp -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal:/tmp/ceph.mon.compute1.keyring /tmp/mon.compute1.keyring.local # Copy to a temp name locally
+
+# Copy the temporary monmap from controller to your external node
+scp -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal:/tmp/monmap.latest /tmp/monmap.latest.local # Copy to a temp name locally
+
+# Copy the key from your external node to /tmp/ on compute1
+scp -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no /tmp/mon.compute1.keyring.local vagrant@compute1.os.lokal:/tmp/ceph.mon.compute1.keyring.tmp
+
+# Copy the monmap from your external node to /tmp/ on compute1
+scp -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no /tmp/monmap.latest.local vagrant@compute1.os.lokal:/tmp/monmap.latest.tmp
+
+# Clean up the temporary files on your external node
+rm /tmp/mon.compute1.keyring.local /tmp/monmap.latest.local
+```
+
+#### Initialize Monitor Data Store (mkfs) on the New Monitor Node (compute1)
+
+```
+# On your external node, SSH into compute1
+
+# Ensure ceph user can read temporary files in /tmp/ before mkfs
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /tmp/ceph.mon.compute1.keyring.tmp /tmp/monmap.latest.tmp' # Use .tmp names here
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chmod 600 /tmp/ceph.mon.compute1.keyring.tmp' # Temp key
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chmod 644 /tmp/monmap.latest.tmp' # Monmap
+
+
+# Initialize Monitor data store (mkfs) on compute1, running as ceph user
+# Use the temporary key and the latest monmap copied to /tmp/
+# This command *creates* the store.db/ directory and its initial files.
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo -u ceph ceph-mon --mkfs -i compute1 --monmap /tmp/monmap.latest.tmp --keyring /tmp/ceph.mon.compute1.keyring.tmp'
+
+# Ensure recursive ownership of the data directory after mkfs
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown -R ceph:ceph /var/lib/ceph/mon/ceph-compute1' # Should already be ceph, but good measure
+
+# Clean up temporary files from /tmp/ on compute1 after mkfs
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo rm /tmp/ceph.mon.compute1.keyring.tmp /tmp/monmap.latest.tmp'
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### Move Files and Finalize Permissions on the New Monitor Node (compute1) (old)
+
+```
+# On your external node, SSH into compute1
+
+# Move the key from /tmp/ to the monitor data directory using sudo
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo mv /tmp/ceph.mon.compute1.keyring.tmp /var/lib/ceph/mon/ceph-compute1/keyring'
+
+# Ensure key ownership is correct (should be ceph:ceph)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/keyring'
+
+# Ensure key permissions are correct (should be 0600)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chmod 600 /var/lib/ceph/mon/ceph-compute1/keyring'
+
+
+# Move the monmap from /tmp/ to the monitor data directory using sudo
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo mv /tmp/monmap.latest.tmp /var/lib/ceph/mon/ceph-compute1/monmap'
+
+# Ensure monmap ownership is correct (should be ceph:ceph)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/monmap'
+
+# Ensure monmap permissions are correct (0644 is typical)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chmod 644 /var/lib/ceph/mon/ceph-compute1/monmap'
+
+
+# Create systemd 'done' file for compute1 monitor
+# Signal systemd that this monitor is configured
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo touch /var/lib/ceph/mon/ceph-compute1/done'
+
+# Ensure systemd done file ownership is correct
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/done'
+```
+
+#### Start Monitor Service on the New Node (compute1)
+
+```
+# On your external node, SSH into compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo systemctl enable ceph-mon@compute1.service'
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo systemctl start ceph-mon@compute1.service'
+```
+
+
+#### Verify the monitor on the New Node (compute1)
+
+```
+# On your external node, SSH into controller
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal '
+sudo systemctl status ceph-mon@compute1.service # Check service status
+sudo ceph mon stat # Should show quorum [0] compute1
+'
+# Look for 'mon: 1 daemons, quorum 0 comoute1'
+```
+
+#### Add Monitor to the Quorum
+
+```
+# On your external node, SSH into controller
+# This tells the running cluster about the new monitor
+# Note: This also requires permissions on controller to run ceph commands.
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo ceph mon add compute1 10.0.1.11'
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Create second monitor  (old)
+
+```
+# On your external node, SSH into compute1
+
+# Create Monitor data directory for compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo mkdir -p /var/lib/ceph/mon/ceph-compute1'
+
+# Ensure Monitor data directory ownership is correct on compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1'
+
+
+# On your external node, SSH into controller (to generate key for compute1 and get the latest monmap)
+# ... (Commands to generate key and get monmap on controller, and chown them to vagrant in /tmp/ are the same as before) ...
+# (Output files: /tmp/ceph.mon.compute1.keyring and /tmp/monmap.latest on controller, owned by vagrant)
+
+
+# On your external node (to copy key and monmap to compute1 - TWO STEPS)
+
+# --- Copy mon.compute1.keyring to /tmp/ on compute1 ---
+# Copy the temporary key from controller to your external node
+scp -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal:/tmp/ceph.mon.compute1.keyring /tmp/mon.compute1.keyring.local # Copy to a temp name locally
+# Copy the key from your external node to /tmp/ on compute1 (where vagrant has write access)
+scp -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no /tmp/mon.compute1.keyring.local vagrant@compute1.os.lokal:/tmp/ceph.mon.compute1.keyring.tmp
+
+# --- Copy monmap.latest to /tmp/ on compute1 ---
+# Copy the temporary monmap from controller to your external node
+scp -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal:/tmp/monmap.latest /tmp/monmap.latest.local # Copy to a temp name locally
+# Copy the monmap from your external node to /tmp/ on compute1 (where vagrant has write access)
+scp -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no /tmp/monmap.latest.local vagrant@compute1.os.lokal:/tmp/monmap.latest.tmp
+
+# Clean up the temporary files on your external node
+rm /tmp/mon.compute1.keyring.local /tmp/monmap.latest.local
+
+
+# On your external node, SSH into compute1 (to move files and finalize permissions/start service)
+
+# Move the key from /tmp/ to the monitor data directory using sudo
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo mv /tmp/ceph.mon.compute1.keyring.tmp /var/lib/ceph/mon/ceph-compute1/keyring'
+
+# Ensure key ownership is correct (should be ceph:ceph)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/keyring'
+
+# Ensure key permissions are correct (should be 0600)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chmod 600 /var/lib/ceph/mon/ceph-compute1/keyring'
+
+
+# Move the monmap from /tmp/ to the monitor data directory using sudo
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo mv /tmp/monmap.latest.tmp /var/lib/ceph/mon/ceph-compute1/monmap'
+
+# Ensure monmap ownership is correct (should be ceph:ceph)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/monmap'
+
+# Ensure monmap permissions are correct (0644 is typical)
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chmod 644 /var/lib/ceph/mon/ceph-compute1/monmap'
+
+
+# Create systemd 'done' file for compute1 monitor
+# Signal systemd that this monitor is configured
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo touch /var/lib/ceph/mon/ceph-compute1/done'
+
+# Ensure systemd done file ownership is correct
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo chown ceph:ceph /var/lib/ceph/mon/ceph-compute1/done'
+
+
+# Start Ceph Monitor service on compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo systemctl enable ceph-mon@compute1.service'
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@compute1.os.lokal 'sudo systemctl start ceph-mon@compute1.service'
+
+
+# On your external node, SSH into controller (to add compute1 to the quorum)
+# This tells the running cluster about the new monitor
+# Note: This also requires permissions on controller to run ceph commands.
+# This command should ideally be run AFTER the service on compute1 has started
+# and is attempting to join. You might need to wait a few seconds between starting service and running 'mon add'.
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no vagrant@controller.os.lokal 'sudo ceph mon add compute1 10.0.1.11'
+```
+
+###
+
+
+```
+sudo ceph mon dump
+sudo systemctl status ceph-mon@controller.service
+```

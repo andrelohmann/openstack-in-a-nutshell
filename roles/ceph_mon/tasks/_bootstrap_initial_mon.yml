@@ -1,0 +1,96 @@
+---
+# Tasks to bootstrap the FIRST monitor (runs only once for the cluster)
+
+- name: Assert that at least one monitor is defined in inventory
+  ansible.builtin.assert:
+    that: groups['ceph_mons'] is defined and groups['ceph_mons'] | length > 0
+    fail_msg: "The 'ceph_mons' group must contain at least one host to bootstrap the cluster."
+
+- name: Ensure Ceph user and group exist (on bootstrap node)
+  ansible.builtin.group:
+    name: "{{ ceph_group }}"
+    state: present
+  delegate_to: "{{ groups['ceph_mons'][0] }}" # Run on first mon
+- name: Ensure Ceph user exists (on bootstrap node)
+  ansible.builtin.user:
+    name: "{{ ceph_user }}"
+    group: "{{ ceph_group }}"
+    system: true
+    shell: /sbin/nologin
+    state: present
+  delegate_to: "{{ groups['ceph_mons'][0] }}" # Run on first mon
+
+- name: Generate Ceph admin key (run on admin_node)
+  # Check if admin key exists before generating
+  ansible.builtin.command: >
+    ceph-authtool --create-keyring {{ ceph_admin_keyring_path_admin_node }}
+    --gen-key -n client.admin
+    --cap mon 'allow *' --cap mgr 'allow *' --cap osd 'allow *' --cap mds 'allow *'
+  args:
+    creates: "{{ ceph_admin_keyring_path_admin_node }}" # Idempotency check
+  delegate_to: "{{ admin_node }}" # Typically the first mon, but could be separate
+  become: true # Often requires root to write to /etc/ceph
+
+- name: Generate temporary monitor bootstrap keyring (run on first mon)
+  # Contains mon. key and admin key for mkfs
+  ansible.builtin.command: >
+    ceph-authtool --create-keyring {{ ceph_bootstrap_mon_keyring_file }}
+    --gen-key -n mon.
+    --cap mon 'allow *'
+  args:
+    creates: "{{ ceph_bootstrap_mon_keyring_file }}"
+  delegate_to: "{{ groups['ceph_mons'][0] }}"
+  become: true
+
+- name: Import admin key into temporary monitor bootstrap keyring (run on first mon)
+  # Add the admin key so mkfs includes it
+  ansible.builtin.command: >
+    ceph-authtool {{ ceph_bootstrap_mon_keyring_file }}
+    --import-keyring {{ ceph_admin_keyring_path_admin_node }}
+  delegate_to: "{{ groups['ceph_mons'][0] }}"
+  become: true
+  # This task is tricky for strict idempotency beyond 'creates' on the key file itself.
+  # If the key file is created, we assume import happened. If rerun, import likely fails gracefully or warns.
+
+- name: Generate initial monmap (run on first mon)
+  # Uses IPs from mon_host_ips variable
+  ansible.builtin.command: >
+    monmaptool --create
+    {% for mon_name in groups['ceph_mons'] %}
+    --add {{ mon_name }} {{ hostvars[mon_name]['ceph_public_ip'] | default(mon_name) }}
+    {% endfor %}
+    --fsid {{ ceph_fsid }}
+    {{ ceph_bootstrap_monmap_file }}
+  args:
+    creates: "{{ ceph_bootstrap_monmap_file }}"
+  delegate_to: "{{ groups['ceph_mons'][0] }}"
+  become: true # monmaptool might need privs to write to /tmp or check host info
+
+# --- Add tasks here to set permissions/ownership on the temporary keyring ---
+- name: Ensure temporary bootstrap keyring is readable by ceph user
+  ansible.builtin.file:
+    path: "{{ ceph_bootstrap_mon_keyring_file }}"
+    owner: "{{ ceph_user }}"
+    group: "{{ ceph_group }}" # Optional, but good practice
+    mode: '0600' # Owner read/write, no access for others (including group if group != ceph_user)
+                 # Or '0640' or '0644' depending on exact desired permissions
+                 # '0600' is usually sufficient if owner is 'ceph'
+  delegate_to: "{{ groups['ceph_mons'][0] }}"
+  become: true # Needs root privilege to change ownership/permissions of file created by root
+
+# Add a similar task for the monmap file as well, just in case
+- name: Ensure temporary monmap file is readable by ceph user
+  ansible.builtin.file:
+    path: "{{ ceph_bootstrap_monmap_file }}"
+    owner: "{{ ceph_user }}"
+    group: "{{ ceph_group }}" # Optional
+    mode: '0644' # Monmap doesn't contain secrets, world-readable is fine
+  delegate_to: "{{ groups['ceph_mons'][0] }}"
+  become: true
+
+# --- At this point, monmap and bootstrap keyring are ready on the first mon node ---
+# The next tasks are in _configure_mon_node.yml, which will be included for the first mon node as well.
+# The _configure_mon_node.yml tasks will detect that mkfs hasn't run yet and execute it
+# using the files generated here on the first mon node.
+
+...

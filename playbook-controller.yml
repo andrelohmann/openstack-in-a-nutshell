@@ -51,7 +51,8 @@
     - 00_controller_03_placement # Install placement - resource tracking service
     - 00_controller_04_neutron # Install neutron - networking service
     - 00_controller_05_nova # Install nova - compute service
-    - 00_controller_06_cinder # Install cinder - block storage service
-    - 00_controller_07_horizon # Install horizon - web dashboard
+    - 00_controller_06_ceph # Install ceph - storage backend
+    - 00_controller_07_cinder # Install cinder - block storage service
+    - 00_controller_08_horizon # Install horizon - web dashboard
 
 ...

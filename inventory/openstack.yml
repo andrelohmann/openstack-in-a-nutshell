@@ -1,20 +1,49 @@
 ---
 
-openstack-controller:
+all:
+  # Define all hosts and their specific variables here
   hosts:
     controller:
       ansible_host: controller.os.lokal
       ansible_ssh_common_args: '-i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no'
       ansible_user: vagrant
-openstack-compute:
-  hosts:
+      ceph_public_ip: 10.0.1.10 # <-- Use the actual IP on the Ceph Public Network
     compute1:
       ansible_host: compute1.os.lokal
       ansible_ssh_common_args: '-i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no'
       ansible_user: vagrant
+      ceph_public_ip: 10.0.1.11 # <-- Use the actual IP on the Ceph Public Network
     compute2:
-      ansible_host: compute2.os.lokal
-      ansible_ssh_common_args: '-i .vagrant/machines/compute2/virtualbox/private_key -o StrictHostKeyChecking=no'
+      ansible_host: compute1.os.lokal
+      ansible_ssh_common_args: '-i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no'
       ansible_user: vagrant
+      ceph_public_ip: 10.0.1.12 # <-- Use the actual IP on the Ceph Public Network
+
+  # Define group structure and membership
+  children:
+    # --- Functional Groups ---
+    ceph_mons:
+      hosts:
+        controller: {} # Variables inherited from all.hosts.controller
+        compute1: {}   # Variables inherited from all.hosts.compute1
+        #compute2: {}   # Variables inherited from all.hosts.compute2
+    ceph_mgrs:
+      hosts:
+        controller:
+        compute1: {}
+        compute2: {}
+    ceph_osds:
+      hosts:
+        compute1: {}
+        compute2: {}
+    ceph_admin_node:
+      hosts:
+        controller: {}
+    # --- Group of Groups ---
+    ceph_cluster:
+      children:
+        ceph_mons: {} # References the 'ceph_mons' group defined above
+        ceph_mgrs: {} # References the 'ceph_mgrs' group defined above
+        ceph_osds: {} # References the 'ceph_osds' group defined above
 
 ...

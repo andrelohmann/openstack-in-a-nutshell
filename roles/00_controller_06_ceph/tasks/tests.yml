@@ -1,0 +1,49 @@
+---
+
+- name: List Cinder volume services
+  ansible.builtin.shell: |
+    openstack volume service list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _cinder_service_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Cinder volume services list
+  ansible.builtin.debug:
+    msg: "{{ _cinder_service_list.stdout_lines if _cinder_service_list.stdout_lines is defined else _cinder_service_list.stderr_lines }}"
+
+- name: List available volume types
+  ansible.builtin.shell: |
+    openstack volume type list
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: admin-os
+  become_flags: -i
+  register: _cinder_type_list
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo volume types
+  ansible.builtin.debug:
+    msg: "{{ _cinder_type_list.stdout_lines if _cinder_type_list.stdout_lines is defined else _cinder_type_list.stderr_lines }}"
+
+- name: Check Cinder status
+  ansible.builtin.shell: |
+    cinder-status upgrade check
+  args:
+    executable: /bin/bash
+  become: true
+  register: _cinder_status_check
+  changed_when: false  # This is a read-only operation
+  failed_when: false   # Prevent task from failing if command returns non-zero
+
+- name: Echo Cinder status check results
+  ansible.builtin.debug:
+    msg: "{{ _cinder_status_check.stdout_lines if _cinder_status_check.stdout_lines is defined else _cinder_status_check.stderr_lines }}"
+
+...

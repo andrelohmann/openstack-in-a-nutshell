@@ -1,0 +1,6 @@
+---
+
+# Calculated paths on target node
+mon_data_dir: "{{ ceph_mon_data_dir_base }}/{{ ceph_cluster_name }}-{{ inventory_hostname }}"
+
+...

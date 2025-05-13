@@ -41,8 +41,12 @@ MGT_IP_COMPUTE2: 10.0.0.12
 
 # Chrony - NTP Server
 NTP_SERVER: pool.ntp.org
-INTERNAL_NETWORK: 10.0.0.0/24
-CEPH_NETWORK: 10.0.1.0/24
+
+# OpenStack services networks
+OS_MANAGEMENT_NETWORK: 10.0.0.0/24  # Management network for OpenStack
+CEPH_PUBLIC_NETWORK: 10.0.1.0/24    # Mon, Mgr, RGW, Clients (Cinder, Glance, Nova)
+CEPH_CLUSTER_NETWORK: 10.0.2.0/24   # OSD sync
+OS_SDN_NETWORK: 10.0.3.0/24         # SDN Backbone network / physical network layer for virtual networks
 
 # Secret for the metadata proxy
 METADATA_SECRET: M3taDataS3cr3t

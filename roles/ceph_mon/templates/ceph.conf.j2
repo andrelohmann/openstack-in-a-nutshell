@@ -1,0 +1,31 @@
+[global]
+fsid = {{ ceph_fsid }}
+# mon_initial_members is NOT used by running MONs, only mkfs.
+# mon_initial_members = {{ groups['ceph_mons'] | join(',') }} # Optional, useful for initial monmaptool args
+mon_host = {{ mon_host_ips }} # List of IPs on the Ceph Public Network
+
+# Adjust network based on your VirtualBox setup
+public_network = {{ CEPH_PUBLIC_NETWORK }} # Example - REPLACE with your actual network
+cluster_network = {{ CEPH_CLUSTER_NETWORK }} # Example - REPLACE with your actual network
+
+# Auth settings
+auth_cluster_required = cephx
+auth_service_required = cephx
+auth_client_required = cephx
+
+# Set desired pool defaults
+osd_pool_default_size = 2 # IMPORTANT: Set default replication to 2
+osd_pool_default_min_size = 1 # Allow writes with 1 replica available (adjust as needed for testing)
+# For newer Ceph versions, pg_autoscale might handle PGs, otherwise:
+# osd_pool_default_pg_num = 64 # Adjust based on OSD count, start small
+# osd_pool_default_pgp_num = 64 # Should match pgp_num
+
+[mon]
+mon_allow_pool_delete = true # Useful for dev/test
+
+[client.admin]
+keyring = {{ ceph_conf_dir }}/{{ ceph_cluster_name }}.client.admin.keyring # Path on the client node
+# Or using path_join filter:
+# keyring = {{ [ceph_conf_dir, ceph_cluster_name ~ '.client.admin.keyring'] | path_join }}
+
+# Add other sections or settings as needed
