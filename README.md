@@ -859,3 +859,40 @@ ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyCheck
 sudo ceph mon dump
 sudo systemctl status ceph-mon@controller.service
 ```
+
+
+
+
+
+
+# Kopieren des client.admin-Keyrings vom controller-Node auf deinen lokalen Host
+scp -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no \
+vagrant@controller.os.lokal:/etc/ceph/ceph.client.admin.keyring \
+/tmp/ceph.client.admin.keyring
+
+# Übertragen des Keyrings von deinem lokalen Host auf den compute1-Node
+scp -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no \
+/tmp/ceph.client.admin.keyring \
+vagrant@compute1.os.lokal:/tmp/ceph.client.admin.keyring
+
+# Platzieren des Keyrings auf compute1 mit den richtigen Berechtigungen
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no \
+vagrant@compute1.os.lokal << 'EOF'
+sudo mv /tmp/ceph.client.admin.keyring /etc/ceph/ceph.client.admin.keyring
+sudo chown ceph:ceph /etc/ceph/ceph.client.admin.keyring
+sudo chmod 600 /etc/ceph/ceph.client.admin.keyring
+EOF
+
+# Neustart des Monitor-Dienstes auf compute1
+ssh -i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no \
+vagrant@compute1.os.lokal << 'EOF'
+sudo systemctl restart ceph-mon@compute1.service
+sudo systemctl status ceph-mon@compute1.service
+EOF
+
+# Überprüfung des Cluster-Status
+ssh -i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no \
+vagrant@controller.os.lokal << 'EOF'
+sudo ceph -s
+EOF
+
