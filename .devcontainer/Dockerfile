@@ -30,7 +30,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
-COPY requirements.txt .
+COPY .devcontainer/requirements.txt .
     
 RUN pip3 install -r  requirements.txt --break-system-packages --root-user-action=ignore
 

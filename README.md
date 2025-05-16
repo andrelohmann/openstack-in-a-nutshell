@@ -68,11 +68,19 @@ The simple [Host Networking](https://docs.openstack.org/install-guide/environmen
 The vagrant machine emulates these two networks the following way:
 
 * 1 x Controller Node
-  * 1 x management network device - private_network (10.0.0.11)
-  * 1 x provider network device - public_network (dhcp)
+  * 1 x OpenStack Provider Network Device - public_network (dhcp)
+  * 1 x OpenStack Public Network Device - private_network (10.0.10.10)
+  * 1 x OpenStack Management Network Device - private_network (10.0.20.10)
+  * 1 x OpenStack Tenant Network Device - private_network (10.0.30.10)
+  * 1 x Ceph Public Network Device - private_network (10.0.40.10)
+  * 1 x Ceph Cluster Network Device - private_network (10.0.50.10)
 * 2 x Compute Node
-  * 1 x management network device - private_network (10.0.0.21)
-  * 1 x provider network device - public_network (dhcp)
+  * 1 x OpenStack Provider Network Device - public_network (dhcp)
+  * 1 x OpenStack Public Network Device - private_network (10.0.10.11/.12)
+  * 1 x OpenStack Management Network Device - private_network (10.0.20.11/.12)
+  * 1 x OpenStack Tenant Network Device - private_network (10.0.30.11/.12)
+  * 1 x Ceph Public Network Device - private_network (10.0.40.11/.12)
+  * 1 x Ceph Cluster Network Device - private_network (10.0.50.11/.12)
 
 The self-service network options requires to link the provider network interface to a bridge and then route all traffic over that bridge, instead of the interface.
 
@@ -92,12 +100,12 @@ Please read the Vagrantfile, to figure out, how this is done.
    |                              |                              |
 ========+==============================+==============================+=====================
    |    |                         |    |                         |    |      OS Pub. Net
-   |    |                         |    |                         |    |      10.0.0.0/24
+   |    |                         |    |                         |    |      10.0.10.0/24
    |    |                         |    |                         |    |
    |    |                         |    |                         |    |
 =============+==============================+==============================+================
    |    |    |                    |    |    |                    |    |    | OS Mgmt Net
-   |.10 |    |                    |.11 |    |                    |.12 |    | 10.0.1.0/24
+   |.10 |    |                    |.11 |    |                    |.12 |    | 10.0.20.0/24
    |    |    |                    |    |    |                    |    |    |
    |    |.10 |                    |    |.11 |                    |    |.12 |
    |    |    |                    |    |    |                    |    |    |
@@ -121,15 +129,15 @@ Please read the Vagrantfile, to figure out, how this is done.
                 |    |.10 |                    |    |.11 |                    |    |.12 |
                 |    |    |                    |    |    |                    |    |    |
  OS Tenant Net  |    |    |.10                 |    |    |.11                 |    |    |.12
- 10.0.2.0/24    |    |    |                    |    |    |                    |    |    |
+ 10.0.30.0/24   |    |    |                    |    |    |                    |    |    |
 ================+==============================+==============================+=============
                      |    |                         |    |                         |    |
  Ceph Pub. Net       |    |                         |    |                         |    |
- 10.0.3.0/24         |    |                         |    |                         |    |
+ 10.0.40.0/24        |    |                         |    |                         |    |
 =====================+==============================+==============================+========
                           |                              |                              |
  Ceph Cluster Net         |                              |                              |
- 10.0.2.0/24              |                              |                              |
+ 10.0.50.0/24             |                              |                              |
 ==========================+==============================+==============================+===
 ```
 

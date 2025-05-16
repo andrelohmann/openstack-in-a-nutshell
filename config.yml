@@ -16,10 +16,11 @@ configs:
       memory: "6144"
       cpus: "2"
       disk_size: "50GB"
-      os_mgt_ip: "10.0.0.10"
-      ceph_public_ip: "10.0.1.10"
-      ceph_cluster_ip: "10.0.2.10"
-      os_sdn_ip: "10.0.3.10"
+      os_pub_ip: "10.0.10.10"
+      os_mgt_ip: "10.0.20.10"
+      os_sdn_ip: "10.0.30.10"
+      ceph_public_ip: "10.0.40.10"
+      ceph_cluster_ip: "10.0.50.10"
       domain: controller
       aliases:
       - controller.os.lokal
@@ -30,10 +31,11 @@ configs:
       cpus: "4"
       disk_size: "50GB"
       storage_disk_size: "100GB"
-      os_mgt_ip: "10.0.0.11"
-      ceph_public_ip: "10.0.1.11"
-      ceph_cluster_ip: "10.0.2.11"
-      os_sdn_ip: "10.0.3.11"
+      os_pub_ip: "10.0.10.11"
+      os_mgt_ip: "10.0.20.11"
+      os_sdn_ip: "10.0.30.11"
+      ceph_public_ip: "10.0.40.11"
+      ceph_cluster_ip: "10.0.50.11"
       domain: compute1
       aliases:
       - compute1.os.lokal
@@ -43,10 +45,11 @@ configs:
       cpus: "4"
       disk_size: "50GB"
       storage_disk_size: "100GB"
-      os_mgt_ip: "10.0.0.12"
-      ceph_public_ip: "10.0.1.12"
-      ceph_cluster_ip: "10.0.2.12"
-      os_sdn_ip: "10.0.3.12"
+      os_pub_ip: "10.0.10.12"
+      os_mgt_ip: "10.0.20.12"
+      os_sdn_ip: "10.0.30.12"
+      ceph_public_ip: "10.0.40.12"
+      ceph_cluster_ip: "10.0.50.12"
       domain: compute2
       aliases:
       - compute2.os.lokal

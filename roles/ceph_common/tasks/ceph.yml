@@ -42,3 +42,5 @@
 #  changed_when: false
 
 ...
+
+monmaptool --create --add controller 10.0.1.10 --add compute1 10.0.1.11 --add compute2 10.0.1.12 --fsid 7272bf23-0a44-42e6-b591-5569713531fa /opt/monmap

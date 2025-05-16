@@ -57,14 +57,16 @@ Vagrant.configure("2") do |config|
 
     # OpenStack Provider Network
     b.vm.network "public_network"
+    # OpenStack Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack Management Network
     b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack SDN Underlay Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_sdn_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Public Network
     b.vm.network "private_network", ip: vagrant_config['vms']['controller']['ceph_public_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Cluster Network
     b.vm.network "private_network", ip: vagrant_config['vms']['controller']['ceph_cluster_ip'], netmask: "255.255.255.0"
-    # OpenStack SDN Underlay Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_sdn_ip'], netmask: "255.255.255.0"
 
     # Hostname Domains
     b.vm.hostname = vagrant_config['vms']['controller']['domain']
@@ -116,14 +118,16 @@ Vagrant.configure("2") do |config|
 
     # OpenStack Provider Network
     b.vm.network "public_network"
+    # OpenStack Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack Management Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack SDN Underlay Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_sdn_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Public Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['ceph_public_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Cluster Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['ceph_cluster_ip'], netmask: "255.255.255.0"
-    # OpenStack SDN Underlay Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_sdn_ip'], netmask: "255.255.255.0"
 
     # Hostname Domains
     b.vm.hostname = vagrant_config['vms']['compute1']['domain']
@@ -175,14 +179,16 @@ Vagrant.configure("2") do |config|
 
     # OpenStack Provider Network
     b.vm.network "public_network"
+    # OpenStack Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack Management Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack SDN Underlay Networ
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_sdn_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Public Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['ceph_public_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Cluster Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['ceph_cluster_ip'], netmask: "255.255.255.0"
-    # OpenStack SDN Underlay Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_sdn_ip'], netmask: "255.255.255.0"
 
     # Hostname Domains
     b.vm.hostname = vagrant_config['vms']['compute2']['domain']

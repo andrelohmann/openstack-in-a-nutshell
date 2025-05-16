@@ -50,7 +50,7 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
-	"postCreateCommand": "bash scripts/install_dependencies.sh",
+	"postCreateCommand": "bash .devcontainer/scripts/install_dependencies.sh",
 
 	// Configure tool-specific properties.
 	// "customizations": {},

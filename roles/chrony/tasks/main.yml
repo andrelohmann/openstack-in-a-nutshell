@@ -1,0 +1,81 @@
+---
+
+- name: Install chrony package
+  ansible.builtin.apt:
+    name: chrony
+    state: present
+    update_cache: true
+  tags: chrony_install
+
+- name: Configure Chrony Server (first host in play)
+  when: inventory_hostname == ansible_play_hosts_all[0]
+  block:
+    - name: Ensure default pool servers are present for the main NTP server
+      ansible.builtin.blockinfile:
+        path: /etc/chrony/chrony.conf
+        block: |
+          pool 2.debian.pool.ntp.org offline iburst
+          pool 0.debian.pool.ntp.org offline iburst
+          pool 1.debian.pool.ntp.org offline iburst
+          pool 3.debian.pool.ntp.org offline iburst
+        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR UPSTREAM POOLS"
+        insertbefore: "^#?allow"
+        create: true # Ensure file exists, though apt should create it
+
+    - name: Configure server to allow NTP clients from other hosts in the play
+      ansible.builtin.lineinfile:
+        path: /etc/chrony/chrony.conf
+        line: "allow {{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+        state: present
+      loop: "{{ ansible_play_hosts_all | difference([inventory_hostname]) }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Ensure 'local stratum' is configured as a fallback
+      ansible.builtin.lineinfile:
+        path: /etc/chrony/chrony.conf
+        line: "local stratum 10"
+        state: present
+        insertafter: EOF
+
+    - name: Remove any lines that might configure this server as a client to other internal hosts
+      ansible.builtin.lineinfile:
+        path: /etc/chrony/chrony.conf
+        regexp: "^server {{ hostvars[item]['ansible_default_ipv4']['address'] }} iburst"
+        state: absent
+      loop: "{{ ansible_play_hosts_all | difference([inventory_hostname]) }}"
+      loop_control:
+        label: "{{ item }}"
+
+  tags: chrony_server_config
+
+- name: Configure Chrony Client (other hosts in play)
+  when: inventory_hostname != ansible_play_hosts_all[0]
+  block:
+    - name: Ensure chrony client points to the first host in play as NTP server
+      ansible.builtin.blockinfile:
+        path: /etc/chrony/chrony.conf
+        block: |
+          server {{ hostvars[ansible_play_hosts_all[0]]['ansible_default_ipv4']['address'] }} iburst
+        marker: "# {mark} ANSIBLE MANAGED BLOCK FOR NTP SERVER"
+        create: true
+
+    - name: Comment out default pool lines on clients
+      ansible.builtin.replace:
+        path: /etc/chrony/chrony.conf
+        regexp: '^(pool\s+.*)'
+        replace: '# \1'
+
+    - name: Comment out any other server lines on clients
+      ansible.builtin.replace:
+        path: /etc/chrony/chrony.conf
+        regexp: '^(server\s+(?!{{ hostvars[ansible_play_hosts_all[0]]["ansible_default_ipv4"]["address"] }}).*)$'
+        replace: '# \1'
+  tags: chrony_client_config
+
+- name: Ensure chrony service is enabled and restarted
+  ansible.builtin.service:
+    name: chrony
+    state: restarted
+    enabled: true
+  tags: chrony_service

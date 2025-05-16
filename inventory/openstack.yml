@@ -22,6 +22,11 @@ all:
   # Define group structure and membership
   children:
     # --- Functional Groups ---
+    chrony_servers:
+      hosts:
+        controller: {} # Variables inherited from all.hosts.controller
+        compute1: {}   # Variables inherited from all.hosts.compute1
+        compute2: {}   # Variables inherited from all.hosts.compute2
     ceph_mons:
       hosts:
         controller: {} # Variables inherited from all.hosts.controller
