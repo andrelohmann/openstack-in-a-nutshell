@@ -85,8 +85,8 @@ Please read the Vagrantfile, to figure out, how this is done.
                                        +-------------+--------------+
                                                      |
                                                      | .10  .11   .12 (IPs an den senkrechten Linien unten)
-=================OpenStack Provider Network (192.168.178.0/24)====================
-                 +                           +                            +
+==+==OpenStack Provider Network (192.168.x.0/24)====================================
+  |                           +                            +
                  |                           |                            |
                  |                           |                            | .10  .11   .12
 ====================OpenStack Public Network (OS-API, 10.0.4.0/24)===================
@@ -99,18 +99,18 @@ Please read the Vagrantfile, to figure out, how this is done.
 10.0.4.10            |        192.168.178.11         |                        | 10.0.4.12
 10.0.0.10            |        10.0.4.11              |         192.168.178.12 | 10.0.0.12
                      |        10.0.0.11              |         10.0.4.12      |
-+--------------------|-----+  +----------------------|-----+  +---------------|----+
-| controller01       |     |  | hci01                |     |  | hci02         |    |
-+--------------------|-----+  +----------------------|-----+  +---------------|----+
-| - Ceph MON, MGR    |     |  | - Ceph MON, MGR, OSDs|     |  | - Ceph MON,MGR,OSDs|
-| - Chrony (Server)  |     |  | - Chrony (Client)    |     |  | - Chrony (Client)  |
-| - ETCD, MariaDB    |     |  | - KVM/QEMU           |     |  | - KVM/QEMU         |
-| - Memcache,RabbitMQ|     |  | - Nova (Compute)     |     |  | - Nova (Compute)   |
-| - Keystone,Glance-C|     |  | - Neutron (Comp Agent)|   |  | - Neutron (Comp Ag)|
-| - Placement,Nova-C |     |  | - Cinder (Storage)   |     |  | - Cinder (Storage) |
-| - Neutron-C,Cinder-C|    |  |                      |     |  |                    |
-| - Horizon          |     |  |                      |     |  |                    |
-+--------------------|-----+  +----------------------|-----+  +---------------|----+
++----------------------------+ +----------------------------+ +----------------------------+
+| controller1                | | compute1                   | | compute2                   |
++----------------------------+ +----------------------------+ +----------------------------+
+| - Ceph MON, MGR            | | - Ceph MON, MGR, OSDs      | | - Ceph MON,MGR,OSDs        |
+| - Chrony (Server)          | | - Chrony (Client)          | | - Chrony (Client)          |
+| - ETCD, MariaDB            | | - KVM/QEMU                 | | - KVM/QEMU                 |
+| - Memcache,RabbitMQ        | | - Nova (Compute)           | | - Nova (Compute)           |
+| - Keystone,Glance-C        | | - Neutron (Comp Agent)     | | - Neutron (Comp Ag)        |
+| - Placement,Nova-C         | | - Cinder (Storage)         | | - Cinder (Storage)         |
+| - Neutron-C,Cinder-C       | |                            | |                            |
+| - Horizon                  | |                            | |                            |
++----------------------------+ +----------------------------+ +----------------------------+
 10.0.3.10            |        10.0.3.11              |         10.0.3.12      |
 10.0.1.10            |        10.0.1.11              |         10.0.1.12      |
 10.0.2.10            |        10.0.2.11              |         10.0.2.12      |
