@@ -26,7 +26,7 @@ all:
       hosts:
         controller: {} # Variables inherited from all.hosts.controller
         compute1: {}   # Variables inherited from all.hosts.compute1
-        #compute2: {}   # Variables inherited from all.hosts.compute2
+        compute2: {}   # Variables inherited from all.hosts.compute2
     ceph_mgrs:
       hosts:
         controller:
@@ -36,9 +36,16 @@ all:
       hosts:
         compute1: {}
         compute2: {}
-    ceph_admin_node:
+    ceph_admin_nodes:
       hosts:
         controller: {}
+    openstack_controller:
+      hosts:
+        controller: {}
+    openstack_hci:
+      hosts:
+        compute1: {}
+        compute2: {}
     # --- Group of Groups ---
     ceph_cluster:
       children:
