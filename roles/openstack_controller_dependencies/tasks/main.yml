@@ -19,7 +19,4 @@
 - name: Install Etcd
   ansible.builtin.include_tasks: etcd.yml
 
-- name: Install Chrony (NTP)
-  ansible.builtin.include_tasks: chrony.yml
-
 ...

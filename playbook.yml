@@ -52,6 +52,21 @@
   roles:
     - chrony
 
+- name: Controller Dependencies
+  hosts: openstack_controller
+  gather_facts: true
+  become: true
+  become_method: ansible.builtin.sudo
+
+  pre_tasks:
+
+    - name: Load ansible vars, if existent
+      ansible.builtin.include_vars:
+        file: ansible_vars.yml
+
+  roles:
+    - openstack_controller_dependencies
+
 # - name: Prerequisites Ceph
 #   hosts: all
 #   gather_facts: true

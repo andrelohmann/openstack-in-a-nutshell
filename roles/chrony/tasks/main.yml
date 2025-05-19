@@ -25,7 +25,7 @@
     - name: Configure server to allow NTP clients from other hosts in the play
       ansible.builtin.lineinfile:
         path: /etc/chrony/chrony.conf
-        line: "allow {{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+        line: "allow {{ hostvars[item]['os_mgt_ip'] }}"
         state: present
       loop: "{{ ansible_play_hosts_all | difference([inventory_hostname]) }}"
       loop_control:
@@ -41,7 +41,7 @@
     - name: Remove any lines that might configure this server as a client to other internal hosts
       ansible.builtin.lineinfile:
         path: /etc/chrony/chrony.conf
-        regexp: "^server {{ hostvars[item]['ansible_default_ipv4']['address'] }} iburst"
+        regexp: "^server {{ hostvars[item]['os_mgt_ip'] }} iburst"
         state: absent
       loop: "{{ ansible_play_hosts_all | difference([inventory_hostname]) }}"
       loop_control:
@@ -56,7 +56,7 @@
       ansible.builtin.blockinfile:
         path: /etc/chrony/chrony.conf
         block: |
-          server {{ hostvars[ansible_play_hosts_all[0]]['ansible_default_ipv4']['address'] }} iburst
+          server {{ hostvars[ansible_play_hosts_all[0]]['os_mgt_ip'] }} iburst
         marker: "# {mark} ANSIBLE MANAGED BLOCK FOR NTP SERVER"
         create: true
 
@@ -69,7 +69,7 @@
     - name: Comment out any other server lines on clients
       ansible.builtin.replace:
         path: /etc/chrony/chrony.conf
-        regexp: '^(server\s+(?!{{ hostvars[ansible_play_hosts_all[0]]["ansible_default_ipv4"]["address"] }}).*)$'
+        regexp: '^(server\s+(?!{{ hostvars[ansible_play_hosts_all[0]]["os_mgt_ip"] }}).*)$'
         replace: '# \1'
   tags: chrony_client_config
 
