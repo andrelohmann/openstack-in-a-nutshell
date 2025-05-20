@@ -25,7 +25,7 @@
     mode: '0644'
     no_extra_spaces: true
   loop:
-    - { option: 'mon_initial_members', value: "{{ groups['ceph_mons'] | map(attribute='inventory_hostname') | join(',') }}" }
+    - { option: 'mon_initial_members', value: "{{ groups['ceph_mons'] | join(',') }}" }
     - { option: 'mon_allow_pool_delete', value: 'true' }
     - { option: 'auth_allow_insecure_global_id_reclaim', value: 'false' }
   # notify: Restart ceph services relevant to this node

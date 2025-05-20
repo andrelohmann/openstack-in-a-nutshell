@@ -1,8 +1,56 @@
 ---
-# Tasks for Ceph Manager (mgr) setup will be added here.
-# This role will depend on ceph_common and ceph_mon (for cluster interaction).
-# Responsibilities:
-# - Install ceph-mgr package.
-# - Manage ceph-mgr service.
-# - Manage manager keyring(s).
-# - Enable and configure ceph-mgr modules (e.g., dashboard, prometheus).
+
+- name: Configure Ceph mgr settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: mgr
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - { option: 'mon_hostmgr_standby_modules', value: "true" }
+    - { option: 'debug_mgr', value: "10/20" }
+    - { option: 'debug_mgr_modules', value: "10/20" }
+
+- name: Install Ceph manager packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - ceph-mgr
+    - ceph-mgr-dashboard
+
+- name: Run on first manager
+  when: inventory_hostname == ansible_play_hosts_all[0]
+  block:
+
+  - name: Initialize first manager
+    ansible.builtin.include_tasks: ceph_mgr_initial_setup.yml
+
+# - name: Update configuration
+#   ansible.builtin.include_tasks: ceph_mgr_config.yml
+
+# - name: Run on first monitor
+#   when: inventory_hostname == ansible_play_hosts_all[0]
+#   block:
+
+#   - name: Extract Files from initial monitor
+#     ansible.builtin.include_tasks: ceph_mon_extract_secrets.yml
+
+# - name: Run on additional monitors
+#   when: inventory_hostname != ansible_play_hosts_all[0]
+#   block:
+
+#   - name: Add addtitonal monitor
+#     ansible.builtin.include_tasks: ceph_mon_add.yml
+
+...
