@@ -1,6 +1,6 @@
 ---
 
 hostname: controller
-ceph_public_ip: 10.0.1.10
+ceph_public_ip: 10.0.40.10
 
 ...

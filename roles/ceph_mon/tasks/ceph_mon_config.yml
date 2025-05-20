@@ -1,0 +1,45 @@
+---
+
+- name: Configure Ceph global settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: global
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - { option: 'mon_host', value: "{{ groups['ceph_mons'] | map('extract', hostvars, 'ceph_public_ip') | join(',') }}" }
+  # notify: Restart ceph services relevant to this node
+
+- name: Configure Ceph monitor settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: mon
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - { option: 'mon_initial_members', value: "{{ groups['ceph_mons'] | map(attribute='inventory_hostname') | join(',') }}" }
+    - { option: 'mon_allow_pool_delete', value: 'true' }
+    - { option: 'auth_allow_insecure_global_id_reclaim', value: 'false' }
+  # notify: Restart ceph services relevant to this node
+
+- name: Configure Ceph client.admin settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: client.admin
+    option: keyring
+    value: /etc/ceph/ceph.client.admin.keyring
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  # notify: Restart ceph services relevant to this node
+
+...

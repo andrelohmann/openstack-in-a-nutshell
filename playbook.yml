@@ -67,40 +67,34 @@
   roles:
     - openstack_controller_dependencies
 
-# - name: Prerequisites Ceph
-#   hosts: all
-#   gather_facts: true
-#   become: true
-#   become_method: ansible.builtin.sudo
+- name: Prerequisites Ceph
+  hosts: ceph_nodes
+  gather_facts: true
+  become: true
+  become_method: ansible.builtin.sudo
 
-#   pre_tasks:
+  pre_tasks:
 
-#     - name: Load ansible vars, if existent
-#       ansible.builtin.include_vars:
-#         file: ansible_vars.yml
+    - name: Load ansible vars, if existent
+      ansible.builtin.include_vars:
+        file: ansible_vars.yml
 
-#     - name: Set the hostname
-#       ansible.builtin.hostname:
-#         name: "{{ hostname }}"
+  roles:
+    - ceph_common
 
-#     # - name: Update hosts file
-#     #   ansible.builtin.lineinfile:
-#     #     path: /etc/hosts
-#     #     regexp: '^127.0.0.1'
-#     #     line: "127.0.0.1 localhost"
+- name: Install ceph monitors
+  hosts: ceph_mons
+  gather_facts: true
+  become: true
+  become_method: ansible.builtin.sudo
 
-# - name: Install ceph monitors
-#   hosts: ceph_mons
-#   gather_facts: true
-#   become: true
-#   become_method: ansible.builtin.sudo
+  pre_tasks:
 
-#   pre_tasks:
+    - name: Load ansible vars, if existent
+      ansible.builtin.include_vars:
+        file: ansible_vars.yml
 
-#     - name: Load ansible vars, if existent
-#       ansible.builtin.include_vars:
-#         file: ansible_vars.yml
+  roles:
+    - ceph_mon
 
-#   roles:
-#     - ceph_mon
 ...

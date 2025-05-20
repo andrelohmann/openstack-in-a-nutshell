@@ -1,6 +1,6 @@
 ---
 
 hostname: compute1
-ceph_public_ip: 10.0.1.11
+ceph_public_ip: 10.0.40.11
 
 ...

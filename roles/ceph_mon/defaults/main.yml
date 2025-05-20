@@ -1,37 +1,7 @@
 ---
 
-ceph_cluster_name: ceph
-ceph_packages_mon:
-  - ceph-mon
-  - ceph-common # Ensure this is installed on all nodes that need ceph commands/libraries
-
-ceph_conf_dir: /etc/ceph
-ceph_mon_data_dir_base: /var/lib/ceph/mon
-
-# User/Group for Ceph daemons
-ceph_user: ceph
-ceph_group: ceph
-
-# The node used to run cluster-modifying commands (needs admin key)
-# MUST be listed in your inventory under [admin_node] group
-admin_node: "{{ groups['admin_node'][0] | default(groups['ceph_mons'][0]) }}" # Default to first mon if admin_node group not defined
-
-# Required variable - MUST be defined in group_vars/all or similar
-# ceph_fsid: "YOUR_CLUSTER_FSID_HERE"
-
-# Assuming primary hostnames in inventory resolve to Ceph Public Network IPs for mon_host
-# Adjust this if you use different IPs in mon_host vs hostname resolution
-mon_host_ips: "{{ groups['ceph_mons'] | map('extract', hostvars, 'ansible_host') | join(',') }}"
-
-# Path on the node running bootstrap commands for temp monmap and key
-ceph_bootstrap_tmp_path: "/tmp"
-ceph_bootstrap_monmap_file: "{{ ceph_bootstrap_tmp_path }}/{{ ceph_cluster_name }}.monmap.initial"
-ceph_bootstrap_mon_keyring_file: "{{ ceph_bootstrap_tmp_path }}/{{ ceph_cluster_name }}.mon.keyring.bootstrap"
-
-# Admin keyring path on admin_node (needed for ceph commands)
-ceph_admin_keyring_path_admin_node: "{{ ceph_conf_dir }}/{{ ceph_cluster_name }}.client.admin.keyring"
-
-# Signal file to check if mon data directory has been initialized
-mon_initialized_check_file: "{{ mon_data_dir }}/keyring" # ceph-mon --mkfs creates this
+ceph_admin_keyring_path: /etc/ceph/ceph.client.admin.keyring
+ceph_bootstrap_mon_keyring_path: /tmp/ceph.bootstrap.mon.keyring
+ceph_initial_monmap_path: /tmp/monmap.initial
 
 ...

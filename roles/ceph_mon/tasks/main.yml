@@ -1,67 +1,40 @@
 ---
-# Main task file for ceph_mon role
 
-- name: Assert FSID is defined
-  ansible.builtin.assert:
-    that:
-      - ceph_fsid is defined
-      - ceph_fsid | length > 0
-    fail_msg: "ceph_fsid variable must be defined (e.g., in group_vars/all.yml)"
-
-- name: Ensure Ceph Monitor package is installed on mon nodes
+- name: Install Ceph monitor packages
   ansible.builtin.apt:
-    name: "{{ ceph_packages_mon }}"
+    name: "{{ packages }}"
     state: present
-    update_cache: true # Ensure latest version available
-  when: inventory_hostname in groups['ceph_mons']
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - ceph-mon
 
-- name: Create Ceph configuration directory
-  ansible.builtin.file:
-    path: "{{ ceph_conf_dir }}"
-    state: directory
-    mode: '0755'
+- name: Run on first monitor
+  when: inventory_hostname == ansible_play_hosts_all[0]
+  block:
 
-- name: Distribute ceph.conf configuration file
-  ansible.builtin.template:
-    src: "ceph.conf.j2"
-    dest: "{{ ceph_conf_dir }}/{{ ceph_cluster_name }}.conf"
-    owner: root
-    group: root
-    mode: '0644'
-  # Notify handlers if this changes, handlers will restart MON/MGR if running
-  notify:
-    - Restart ceph-mon
-  #  - Restart ceph-mgr # If you have mgr role included later
+  - name: Initialize first monitor
+    ansible.builtin.include_tasks: ceph_mon_initial_setup.yml
 
-# --- Check if the cluster has been bootstrapped ---
-# We check the first monitor's data dir as a signal for the whole cluster
-- name: Check if the first monitor node is initialized
-  ansible.builtin.stat:
-    path: "{{ ceph_mon_data_dir_base }}/{{ ceph_cluster_name }}-{{ groups['ceph_mons'][0] }}/keyring"
-  register: first_mon_initialized_check
-  run_once: true
-  delegate_to: "{{ groups['ceph_mons'][0] }}" # Check on the first mon node
+- name: Update configuration
+  ansible.builtin.include_tasks: ceph_mon_config.yml
 
-# --- Bootstrap the initial monitor if not already done ---
-- name: Include initial bootstrap tasks
-  ansible.builtin.include_tasks: _bootstrap_initial_mon.yml
-  when: not first_mon_initialized_check.stat.exists
+- name: Run on first monitor
+  when: inventory_hostname == ansible_play_hosts_all[0]
+  block:
 
-# --- Configure and start monitor service on each designated node ---
-# This runs on ALL nodes in ceph_mons group
-- name: Include monitor node configuration tasks
-  ansible.builtin.include_tasks: _configure_mon_node.yml
-  when: inventory_hostname in groups['ceph_mons']
+  - name: Extract Files from initial monitor
+    ansible.builtin.include_tasks: ceph_mon_extract_secrets.yml
 
-# --- Add any new monitors to the running quorum ---
-# This happens *after* services on potentially new nodes are starting up
-# Needs admin key and connection to the running quorum
-- name: Include tasks to add monitors to quorum
-  ansible.builtin.include_tasks: _add_mons_to_quorum.yml
-  when: first_mon_initialized_check.stat.exists # Only add if cluster is already bootstrapped
-  run_once: true
+- name: Run on additional monitors
+  when: inventory_hostname != ansible_play_hosts_all[0]
+  block:
 
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
+  - name: Add addtitonal monitor
+    ansible.builtin.include_tasks: ceph_mon_add.yml
 
 ...

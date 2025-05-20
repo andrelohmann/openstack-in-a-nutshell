@@ -57,10 +57,10 @@ Vagrant.configure("2") do |config|
 
     # OpenStack Provider Network
     b.vm.network "public_network"
-    # OpenStack Public Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack Management Network
     b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack SDN Underlay Network
     b.vm.network "private_network", ip: vagrant_config['vms']['controller']['os_sdn_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Public Network
@@ -118,10 +118,10 @@ Vagrant.configure("2") do |config|
 
     # OpenStack Provider Network
     b.vm.network "public_network"
-    # OpenStack Public Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack Management Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack SDN Underlay Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute1']['os_sdn_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Public Network
@@ -179,10 +179,10 @@ Vagrant.configure("2") do |config|
 
     # OpenStack Provider Network
     b.vm.network "public_network"
-    # OpenStack Public Network
-    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack Management Network
     b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_mgt_ip'], netmask: "255.255.255.0"
+    # OpenStack Public Network
+    b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_pub_ip'], netmask: "255.255.255.0"
     # OpenStack SDN Underlay Networ
     b.vm.network "private_network", ip: vagrant_config['vms']['compute2']['os_sdn_ip'], netmask: "255.255.255.0"
     # OpenStack Ceph Public Network

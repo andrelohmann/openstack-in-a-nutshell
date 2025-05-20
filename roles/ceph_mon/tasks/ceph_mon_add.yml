@@ -1,0 +1,55 @@
+---
+
+
+- name: Copy share/ceph.client.admin.keyring
+  ansible.builtin.copy:
+    src: share/ceph.client.admin.keyring
+    dest: /etc/ceph/ceph.client.admin.keyring
+    owner: ceph
+    group: ceph
+    mode: '0644'
+
+- name: Copy share/monmap
+  ansible.builtin.copy:
+    src: share/monmap
+    dest: /tmp/monmap
+    owner: ceph
+    group: ceph
+    mode: '0644'
+
+- name: Copy share/ceph.mon.keyring
+  ansible.builtin.copy:
+    src: share/ceph.mon.keyring
+    dest: /tmp/ceph.mon.keyring
+    owner: ceph
+    group: ceph
+    mode: '0644'
+
+# Create monitor folder /var/lib/ceph/mon/ceph-{{ inventory_hostname }}
+- name: Create monitor folder /var/lib/ceph/mon/ceph-{{ inventory_hostname }}
+  ansible.builtin.file:
+    path: /var/lib/ceph/mon/ceph-{{ inventory_hostname }}
+    state: directory
+    owner: ceph
+    group: ceph
+    mode: '0755'
+
+# Run the ceph-mon command to create the monitor as user ceph
+- name: Run the ceph-mon command to create the monitor
+  ansible.builtin.command:
+    cmd: "ceph-mon --mkfs -i {{ inventory_hostname }} --monmap /tmp/monmap --keyring /tmp/ceph.mon.keyring"
+  args:
+    chdir: /var/lib/ceph/mon/ceph-{{ inventory_hostname }}
+    creates: /var/lib/ceph/mon/ceph-{{ inventory_hostname }}/keyring
+  become: true
+  become_user: ceph
+
+# Enable and start ceph-mon@compute2.service
+- name: Enable and start ceph-mon@{{ inventory_hostname }}.service
+  ansible.builtin.systemd:
+    name: "ceph-mon@{{ inventory_hostname }}.service"
+    enabled: true
+    state: started
+    daemon_reload: yes # Good practice after package install or unit file changes
+
+...

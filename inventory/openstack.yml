@@ -8,19 +8,19 @@ all:
       ansible_ssh_common_args: '-i .vagrant/machines/controller/virtualbox/private_key -o StrictHostKeyChecking=no'
       ansible_user: vagrant
       os_mgt_ip: 10.0.20.10 # <-- Use the actual IP on the OpenStack Mgt Network
-      ceph_public_ip: 10.0.40.10 # <-- Use the actual IP on the Ceph Public Network
+      #ceph_public_ip: 10.0.40.10 # <-- Use the actual IP on the Ceph Public Network
     compute1:
       ansible_host: compute1.os.lokal
       ansible_ssh_common_args: '-i .vagrant/machines/compute1/virtualbox/private_key -o StrictHostKeyChecking=no'
       ansible_user: vagrant
       os_mgt_ip: 10.0.20.11 # <-- Use the actual IP on the OpenStack Mgt Network
-      ceph_public_ip: 10.0.40.11 # <-- Use the actual IP on the Ceph Public Network
+      #ceph_public_ip: 10.0.40.11 # <-- Use the actual IP on the Ceph Public Network
     compute2:
       ansible_host: compute2.os.lokal
       ansible_ssh_common_args: '-i .vagrant/machines/compute2/virtualbox/private_key -o StrictHostKeyChecking=no'
       ansible_user: vagrant
       os_mgt_ip: 10.0.20.12 # <-- Use the actual IP on the OpenStack Mgt Network
-      ceph_public_ip: 10.0.40.12 # <-- Use the actual IP on the Ceph Public Network
+      #ceph_public_ip: 10.0.40.12 # <-- Use the actual IP on the Ceph Public Network
   # Define group structure and membership
   children:
     # --- Functional Groups ---
@@ -54,7 +54,7 @@ all:
         compute1: {}
         compute2: {}
     # --- Group of Groups ---
-    ceph_cluster:
+    ceph_nodes:
       children:
         ceph_mons: {} # References the 'ceph_mons' group defined above
         ceph_mgrs: {} # References the 'ceph_mgrs' group defined above

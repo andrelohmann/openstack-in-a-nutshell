@@ -1,0 +1,176 @@
+---
+
+- name: Define initial monitor facts
+  ansible.builtin.set_fact:
+    ceph_initial_mon_ip: "{{ hostvars[groups['ceph_mons'][0]]['ceph_public_ip'] }}"
+    ceph_mon_data_dir: "/var/lib/ceph/mon/ceph-{{ inventory_hostname }}"
+    ceph_mon_done_file: "/var/lib/ceph/mon/ceph-{{ inventory_hostname }}/done"
+    # Path on Ansible controller to store fetched artifacts, unique per cluster via FSID
+    controller_bootstrap_artifact_path: "/tmp/ceph_bootstrap_artifacts_{{ ceph_fsid }}"
+  # This task should ideally run only when bootstrapping the very first monitor.
+  # The facts are set for the current host, but some (like initial_mon_hostname) are cluster-wide.
+  # If this file is included conditionally for the first mon, run_once: true might be appropriate here.
+
+- name: Configure Ceph global settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: global
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - { option: 'mon_host', value: "{{ hostvars[groups['ceph_mons'][0]]['ceph_public_ip'] }}" }
+  # notify: Restart ceph services relevant to this node
+
+- name: Configure Ceph monitor settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: mon
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - { option: 'mon_initial_members', value: "{{ inventory_hostname }}" } # Uses inventory hostname
+    - { option: 'mon_allow_pool_delete', value: 'true' } # As in user's example ceph.conf [mon] section
+    - { option: 'auth_allow_insecure_global_id_reclaim', value: 'false' }
+  # notify: Restart ceph services relevant to this node
+
+- name: Configure Ceph client.admin settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: client.admin
+    option: keyring
+    value: /etc/ceph/ceph.client.admin.keyring
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  # notify: Restart ceph services relevant to this node
+
+- name: Generate admin keyring ({{ ceph_admin_keyring_path }})
+  ansible.builtin.command:
+    cmd: "ceph-authtool --create-keyring {{ ceph_admin_keyring_path }} --gen-key -n client.admin --cap mon 'allow *' --cap mgr 'allow *' --cap osd 'allow *' --cap mds 'allow *'"
+    creates: "{{ ceph_admin_keyring_path }}"
+
+- name: Set admin keyring permissions and ownership
+  ansible.builtin.file:
+    path: "{{ ceph_admin_keyring_path }}"
+    mode: '0600'
+    owner: ceph
+    group: ceph
+
+- name: Generate temporary monitor bootstrap keyring ({{ ceph_bootstrap_mon_keyring_path }})
+  ansible.builtin.shell:  # Changed from command to shell
+    cmd: |
+      ceph-authtool --create-keyring {{ ceph_bootstrap_mon_keyring_path }} --gen-key -n mon. --cap mon 'allow *' && \\
+      ceph-authtool {{ ceph_bootstrap_mon_keyring_path }} --import-keyring {{ ceph_admin_keyring_path }}
+    creates: "{{ ceph_bootstrap_mon_keyring_path }}"
+
+- name: Set ownership for temporary bootstrap keyring
+  ansible.builtin.file:
+    path: "{{ ceph_bootstrap_mon_keyring_path }}"
+    mode: '0600'
+    owner: ceph
+    group: ceph
+
+- name: Generate initial monmap ({{ ceph_initial_monmap_path }}) # Corrected variable name here
+  ansible.builtin.command:
+    # Note the quoting for --addv: the IP:port part should be a single arg.
+    cmd: "monmaptool --create --addv '{{ inventory_hostname }}' '[v2:{{ ceph_initial_mon_ip }}:3300,v1:{{ ceph_initial_mon_ip }}:6789]' --fsid '{{ ceph_fsid }}' '{{ ceph_initial_monmap_path }}'"
+    creates: "{{ ceph_initial_monmap_path }}"
+
+- name: Set ownership for temporary monmap
+  ansible.builtin.file:
+    path: "{{ ceph_initial_monmap_path }}"
+    mode: '0600'
+    owner: ceph
+    group: ceph
+
+- name: Create monitor data directory ({{ ceph_mon_data_dir }})
+  ansible.builtin.file:
+    path: "{{ ceph_mon_data_dir }}"
+    state: directory
+    owner: ceph
+    group: ceph
+    mode: '0755'
+
+- name: Initialize monitor data store (mkfs)
+  ansible.builtin.command:
+    # ceph-mon --mkfs creates a 'keyring' file in the mon_data_dir, which is a good check for 'creates'
+    cmd: "ceph-mon --mkfs -i {{ inventory_hostname }} --monmap {{ ceph_initial_monmap_path }} --keyring {{ ceph_bootstrap_mon_keyring_path }}"
+    creates: "{{ ceph_mon_data_dir }}/keyring"
+  become: true
+  become_user: ceph # This command must run as the ceph user
+
+- name: Create systemd 'done' file for monitor ({{ ceph_mon_done_file }})
+  ansible.builtin.file:
+    path: "{{ ceph_mon_done_file }}"
+    state: touch # Creates the file if it doesn't exist, updates timestamp if it does
+    owner: ceph
+    group: ceph
+    mode: '0644'
+
+- name: Ensure Ceph monitor service is enabled and started
+  ansible.builtin.systemd:
+    name: "ceph-mon@{{ inventory_hostname }}.service"
+    enabled: true
+    state: started
+    daemon_reload: yes # Good practice after package install or unit file changes
+
+- name: Wait for the monitor to stabilize after start (e.g., 30 seconds)
+  ansible.builtin.pause:
+    seconds: 30
+  # This pause is on the Ansible controller if not delegated.
+  # For waiting for a service on the remote host, other methods like URI checks or command checks are more robust.
+  # However, a simple pause is often sufficient for initial bootstrap.
+
+- name: Address insecure global ID reclaim (run once after first mon is up)
+  ansible.builtin.command:
+    cmd: "ceph config set mon auth_allow_insecure_global_id_reclaim false"
+  # This should run on the active monitor, ideally the first one bootstrapped.
+  # delegate_to: "{{ initial_mon_hostname }}"
+  # run_once: true # Ensures this is run only once for the cluster by the first mon
+  # The above delegate_to and run_once are important if this task file can be run by multiple mons.
+  # If this whole file is already conditional to run on ONLY the first mon, they might be redundant for this specific task.
+
+- name: Remove temporary bootstrap files from the monitor node
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ ceph_bootstrap_mon_keyring_path }}"
+    - "{{ ceph_initial_monmap_path }}"
+
+# Enable and start ceph-mon@compute2.service
+- name: Enable and start ceph-mon@{{ inventory_hostname }}.service
+  ansible.builtin.systemd:
+    name: "ceph-mon@{{ inventory_hostname }}.service"
+    enabled: true
+    state: started
+    daemon_reload: yes # Good practice after package install or unit file changes
+
+...
+
+# --- Tasks for sharing critical files via Ansible controller ---
+# - name: Create local directory on Ansible controller for Ceph bootstrap artifacts
+#   ansible.builtin.file:
+#     path: "{{ controller_bootstrap_artifact_path }}"
+#     state: directory
+#     mode: '0700' # Secure the directory on the controller
+#   delegate_to: localhost
+#   run_once: true # Only one controller needs to create this directory
+
+# - name: Fetch admin keyring to Ansible controller from initial monitor
+#   ansible.builtin.fetch:
+#     src: "{{ admin_keyring_path }}" # Path on the remote (initial monitor)
+#     dest: "{{ controller_bootstrap_artifact_path }}/ceph.client.admin.keyring" # Path on Ansible controller
+#     flat: yes # Stores the file directly in dest, not in a subdirectory named after the host
+#   become: true
+#   # This task runs on the initial monitor (due to playbook targeting)
+#   # but fetches the file TO the localhost (Ansible controller).

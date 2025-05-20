@@ -1,10 +1,60 @@
 ---
 
-- name: Debug
-  ansible.builtin.debug:
-    msg: "Installing Ceph - the OpenStack Storage Backend"
+- name: Install common Ceph packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - acl
+    - ceph-common
 
-- name: Install ceph
-  ansible.builtin.include_tasks: ceph.yml
+- name: Ensure /etc/ceph directory exists
+  ansible.builtin.file:
+    path: /etc/ceph
+    state: directory
+    owner: ceph
+    group: ceph
+    mode: '0755'
 
-...
+- name: Configure Ceph global settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: global
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - { option: 'fsid', value: '{{ ceph_fsid }}' }
+    #- { option: 'mon_host', value: "{{ groups['ceph_mons'] | map('extract', hostvars, 'ceph_public_ip') | join(',') }}" }
+    - { option: 'public_network', value: '{{ ceph_public_network }}' }
+    - { option: 'cluster_network', value: '{{ ceph_cluster_network }}' }
+    - { option: 'ms_bind_msgr2', value: 'true' }
+    - { option: 'osd_pool_default_size', value: '{{ ceph_osd_pool_default_size }}' }
+    - { option: 'osd_pool_default_min_size', value: '{{ ceph_osd_pool_default_min_size }}' }
+    - { option: 'mon_allow_pool_delete', value: 'true' } # As in user's example ceph.conf [global] section
+  # notify: Restart ceph services relevant to this node
+
+# Note: Handlers for 'Restart ceph services relevant to this node'
+# should be defined in your playbook or in meta/main.yml for roles that manage specific services.
+# This ceph_common role itself doesn't start daemons, but configuration changes
+# it makes might require daemons (mon, mgr, osd) started by other roles to be restarted.
+# Example handler structure (in a playbook or another role's meta/main.yml):
+# handlers:
+#   - name: Restart ceph services relevant to this node
+#     ansible.builtin.debug:
+#       msg: "Handler triggered: Ceph config changed. Restart relevant services if they are managed on this node."
+#     # Add specific service restart tasks here, e.g.:
+#     # - name: Restart ceph-mon service if present
+#     #   ansible.builtin.systemd:
+#     #     name: "ceph-mon@{{ ansible_hostname }}.service"
+#     #     state: restarted
+#     #   when: "inventory_hostname in groups['ceph_mons']" # Or a more specific check

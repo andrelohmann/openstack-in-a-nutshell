@@ -2,4 +2,6 @@
 config.override.yml
 /roles/andrelohmann*
 /collections
+/share/*
+!/share/.gitkeep
 .DS_Store
