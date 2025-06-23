@@ -1,0 +1,42 @@
+---
+
+- name: Set admin keyring permissions and ownership
+  ansible.builtin.file:
+    state: directory
+    path: "{{ ceph_mgr_data_dir }}"
+    mode: '0700'
+    owner: ceph
+    group: ceph
+
+- name: Generate mgr keyring
+  ansible.builtin.command:
+    cmd: "ceph auth get-or-create mgr.{{ inventory_hostname }} mon 'allow profile mgr' osd 'allow *' mds 'allow *'"
+    creates: "{{ ceph_mgr_keyring_file }}"
+
+- name: Generate mgr keyring
+  ansible.builtin.command:
+    cmd: "ceph auth get mgr.{{ inventory_hostname }} -o {{ ceph_mgr_keyring_file }}"
+    creates: "{{ ceph_mgr_keyring_file }}"
+
+- name: Set keyring permissions and ownership
+  ansible.builtin.file:
+    path: "{{ ceph_mgr_keyring_file }}"
+    mode: '0600'
+    owner: ceph
+    group: ceph
+
+- name: Ensure Ceph manager service is enabled and started
+  ansible.builtin.systemd:
+    name: "ceph-mgr@{{ inventory_hostname }}.service"
+    enabled: true
+    state: started
+    daemon_reload: yes # Good practice after package install or unit file changes
+
+- name: Wait for the mgr to stabilize after start (e.g., 30 seconds)
+  ansible.builtin.pause:
+    seconds: 30
+  # This pause is on the Ansible controller if not delegated.
+  # For waiting for a service on the remote host, other methods like URI checks or command checks are more robust.
+  # However, a simple pause is often sufficient for initial bootstrap.
+
+...

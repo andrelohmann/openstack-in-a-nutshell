@@ -1,0 +1,27 @@
+---
+
+- name: Activate the dashboard module
+  ansible.builtin.command:
+    cmd: "ceph mgr module enable dashboard"
+    creates: "{{ ceph_mgr_done_file }}"
+
+- name: Deactivate dashboard ssl
+  ansible.builtin.command:
+    cmd: "ceph config set mgr mgr/dashboard/ssl false"
+    creates: "{{ ceph_mgr_done_file }}"
+# Hinweis: Für Produktion sollten Sie ein SSL-Zertifikat konfigurieren:
+# sudo ceph dashboard create-self-signed-cert
+# sudo ceph config set mgr mgr/dashboard/ssl true
+
+- name: Create dashboard admin user with password
+  ansible.builtin.shell:
+    cmd: "echo '{{ ceph_mgr_dashboard_password }}' | sudo ceph dashboard ac-user-create {{ ceph_mgr_dashboard_admin_username }} -i - administrator"
+    creates: "{{ ceph_mgr_done_file }}"
+  args:
+    executable: /bin/bash
+  #args:
+  #  warn: false # Unterdrückt Warnung, dass Passwörter auf der Kommandozeile unsicher sind
+  #no_log: true # Verhindert, dass das Passwort in den Logs erscheint
+  #changed_when: true # Angenommen, das Erstellen ändert immer den Zustand
+
+...

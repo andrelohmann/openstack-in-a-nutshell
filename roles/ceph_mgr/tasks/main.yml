@@ -29,28 +29,43 @@
     - ceph-mgr
     - ceph-mgr-dashboard
 
+- name: Set Directories
+  ansible.builtin.set_fact:
+    ceph_mgr_data_dir: "/var/lib/ceph/mgr/ceph-{{ inventory_hostname }}"
+    ceph_mgr_keyring_file: "/var/lib/ceph/mgr/ceph-{{ inventory_hostname }}/keyring"
+    ceph_mgr_done_file: "/var/lib/ceph/mgr/ceph-{{ inventory_hostname }}/done"
+  # This task should ideally run only when bootstrapping the very first monitor.
+  # The facts are set for the current host, but some (like initial_mon_hostname) are cluster-wide.
+  # If this file is included conditionally for the first mon, run_once: true might be appropriate here.
+
 - name: Run on first manager
   when: inventory_hostname == ansible_play_hosts_all[0]
   block:
 
-  - name: Initialize first manager
-    ansible.builtin.include_tasks: ceph_mgr_initial_setup.yml
+  - name: Create key and activate
+    ansible.builtin.include_tasks: ceph_mgr_create_key.yml
+
+  - name: Initialize dashboard
+    ansible.builtin.include_tasks: ceph_mgr_initialize_dashboard.yml
 
 # - name: Update configuration
 #   ansible.builtin.include_tasks: ceph_mgr_config.yml
-
-# - name: Run on first monitor
-#   when: inventory_hostname == ansible_play_hosts_all[0]
-#   block:
-
 #   - name: Extract Files from initial monitor
 #     ansible.builtin.include_tasks: ceph_mon_extract_secrets.yml
 
-# - name: Run on additional monitors
-#   when: inventory_hostname != ansible_play_hosts_all[0]
-#   block:
+- name: Run on additional managers
+  when: inventory_hostname != ansible_play_hosts_all[0]
+  block:
 
-#   - name: Add addtitonal monitor
-#     ansible.builtin.include_tasks: ceph_mon_add.yml
+  - name: Create key and activate
+    ansible.builtin.include_tasks: ceph_mgr_create_key.yml
+
+- name: Create systemd 'done' file for manager ({{ ceph_mgr_done_file }})
+  ansible.builtin.file:
+    path: "{{ ceph_mgr_done_file }}"
+    state: touch # Creates the file if it doesn't exist, updates timestamp if it does
+    owner: ceph
+    group: ceph
+    mode: '0644'
 
 ...

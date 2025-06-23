@@ -1,0 +1,22 @@
+---
+
+- name: Activate the prometheus module
+  ansible.builtin.command:
+    cmd: "ceph mgr module enable prometheus"
+    creates: "{{ ceph_mgr_done_file }}"
+# Ggf. Scrape-Intervall für Prometheus anpassen (Standard ist 15s)
+# ssh -i ... vagrant@controller.os.lokal 'sudo ceph config set mgr mgr/prometheus/scrape_interval 30'
+
+- name: Activate the pg-autoscaler module
+  ansible.builtin.command:
+    cmd: "ceph mgr module enable pg_autoscaler"
+    creates: "{{ ceph_mgr_done_file }}"
+
+- name: Den Autoscaler für alle Pools standardmäßig auf 'on' setzen (oder 'warn')
+  ansible.builtin.command:
+    cmd: "ceph config set global osd_pool_default_pg_autoscale_mode on"
+    creates: "{{ ceph_mgr_done_file }}"
+# Oder spezifisch für das Modul:
+# ssh -i ... vagrant@controller.os.lokal 'sudo ceph osd pool set <pool_name> pg_autoscale_mode on
+
+...

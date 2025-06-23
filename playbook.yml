@@ -97,5 +97,6 @@
   roles:
     - ceph_mon
     - ceph_mgr
+    - ceph_osd
 
 ...

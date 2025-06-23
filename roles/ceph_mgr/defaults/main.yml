@@ -1,0 +1,6 @@
+---
+
+ceph_mgr_dashboard_password: "StrongPassword123"
+ceph_mgr_dashboard_admin_username: admin
+
+...
