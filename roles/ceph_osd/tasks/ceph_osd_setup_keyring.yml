@@ -1,0 +1,25 @@
+---
+
+- name: Create bootstrap-osd directory
+  ansible.builtin.file:
+    path: /var/lib/ceph/bootstrap-osd/
+    state: directory
+    owner: ceph
+    group: ceph
+    mode: '0755'
+
+- name: Check if bootstrap keyring already exists locally
+  ansible.builtin.stat:
+    path: "{{ ceph_bootstrap_osd_keyring_path }}"
+  register: bootstrap_keyring_exists
+
+- name: Copy bootstrap keyring to OSD node
+  ansible.builtin.copy:
+    src: share/ceph.bootstrap-osd.keyring
+    dest: "{{ ceph_bootstrap_osd_keyring_path }}"
+    owner: ceph
+    group: ceph
+    mode: '0600'
+  when: not bootstrap_keyring_exists.stat.exists
+
+...

@@ -3,4 +3,9 @@
 hostname: compute2
 ceph_public_ip: 10.0.40.12
 
+# OSD devices for this host  
+ceph_osd_devices:
+  - /dev/sdb
+  - /dev/sdc
+
 ...

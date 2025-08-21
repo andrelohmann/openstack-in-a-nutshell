@@ -1,0 +1,32 @@
+---
+
+- name: Get or create bootstrap-osd auth key
+  ansible.builtin.command:
+    cmd: ceph auth get-or-create client.bootstrap-osd mon "allow profile bootstrap-osd"
+  register: bootstrap_osd_key_result
+  changed_when: "'added' in bootstrap_osd_key_result.stdout"
+
+- name: Extract bootstrap-osd keyring to temporary file
+  ansible.builtin.command:
+    cmd: ceph auth get client.bootstrap-osd -o /tmp/ceph.bootstrap-osd.keyring
+  changed_when: false
+
+- name: Change ownership of temporary keyring file
+  ansible.builtin.file:
+    path: /tmp/ceph.bootstrap-osd.keyring
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+
+- name: Fetch bootstrap keyring to ansible controller
+  ansible.builtin.fetch:
+    src: /tmp/ceph.bootstrap-osd.keyring
+    dest: share/ceph.bootstrap-osd.keyring
+    flat: true
+
+- name: Remove temporary keyring file
+  ansible.builtin.file:
+    path: /tmp/ceph.bootstrap-osd.keyring
+    state: absent
+
+...

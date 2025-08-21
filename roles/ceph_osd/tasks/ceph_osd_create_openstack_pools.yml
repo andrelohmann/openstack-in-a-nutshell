@@ -1,0 +1,35 @@
+---
+
+- name: Check if OpenStack pools already exist
+  ansible.builtin.command:
+    cmd: ceph osd pool ls
+  register: existing_pools
+  changed_when: false
+
+- name: Create OpenStack pools
+  ansible.builtin.command:
+    cmd: ceph osd pool create {{ item.name }} {{ item.pg_num }} {{ item.pg_num }}
+  loop: "{{ ceph_openstack_pools }}"
+  when: item.name not in existing_pools.stdout_lines
+  register: pool_creation
+
+- name: Enable RBD application on pools
+  ansible.builtin.command:
+    cmd: ceph osd pool application enable {{ item.name }} {{ item.application }}
+  loop: "{{ ceph_openstack_pools }}"
+  when: 
+    - item.name not in existing_pools.stdout_lines or pool_creation.changed
+  register: rbd_enable
+  failed_when: 
+    - rbd_enable.rc != 0
+    - "'already has an application' not in rbd_enable.stderr"
+
+- name: Display created pools
+  ansible.builtin.command:
+    cmd: ceph osd pool ls detail
+  register: pool_details
+  changed_when: false
+
+- name: Show pool information
+  ansible.builtin.debug:
+    msg: "{{ pool_details.stdout_lines }}"

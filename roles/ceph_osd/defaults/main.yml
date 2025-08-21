@@ -1,0 +1,37 @@
+---
+
+# OSD devices to create - customize this per host in host_vars
+ceph_osd_devices:
+  - /dev/sdb
+  - /dev/sdc
+
+# OSD memory settings for test environments  
+ceph_osd_memory_target_autotune: false
+ceph_osd_memory_target: 1073741824  # 1 GiB
+
+# Whether to force zap devices (destroy existing data)
+ceph_osd_force_zap: false
+
+# Bootstrap OSD keyring path
+ceph_bootstrap_osd_keyring_path: /var/lib/ceph/bootstrap-osd/ceph.keyring
+
+# Wait time for OSD services to start
+ceph_osd_service_start_wait: 30
+
+# Whether to create OpenStack pools automatically
+ceph_create_openstack_pools: true
+
+# OpenStack pool configuration
+ceph_openstack_pools:
+  - name: images
+    description: "Pool for Glance images"
+    pg_num: 32
+    application: rbd
+  - name: volumes  
+    description: "Pool for Cinder volumes"
+    pg_num: 32
+    application: rbd
+  - name: vms
+    description: "Pool for Nova VMs/ephemeral disks"
+    pg_num: 32
+    application: rbd

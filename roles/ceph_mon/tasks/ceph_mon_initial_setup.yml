@@ -11,20 +11,6 @@
   # The facts are set for the current host, but some (like initial_mon_hostname) are cluster-wide.
   # If this file is included conditionally for the first mon, run_once: true might be appropriate here.
 
-- name: Configure Ceph global settings in ceph.conf
-  ansible.builtin.ini_file:
-    path: /etc/ceph/ceph.conf
-    section: global
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-    owner: ceph
-    group: ceph
-    mode: '0644'
-    no_extra_spaces: true
-  loop:
-    - { option: 'mon_host', value: "{{ hostvars[groups['ceph_mons'][0]]['ceph_public_ip'] }}" }
-  # notify: Restart ceph services relevant to this node
-
 - name: Configure Ceph monitor settings in ceph.conf
   ansible.builtin.ini_file:
     path: /etc/ceph/ceph.conf

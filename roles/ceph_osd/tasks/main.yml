@@ -1,0 +1,50 @@
+---
+
+- name: Configure Ceph OSD settings in ceph.conf
+  ansible.builtin.ini_file:
+    path: /etc/ceph/ceph.conf
+    section: osd
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: ceph
+    group: ceph
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - { option: 'osd_memory_target_autotune', value: "{{ ceph_osd_memory_target_autotune | string | lower }}" }
+    - { option: 'osd_memory_target', value: "{{ ceph_osd_memory_target }}" }
+  notify: restart ceph services
+
+- name: Install Ceph OSD packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    dpkg_options: 'force-confnew,force-confdef'
+    autoclean: true
+    autoremove: true
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    packages:
+    - ceph-osd
+    - gdisk
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Prepare bootstrap OSD keyring
+  ansible.builtin.include_tasks: ceph_osd_prepare_bootstrap_keyring.yml
+  when: inventory_hostname == ansible_play_hosts_all[0]
+
+- name: Setup bootstrap OSD keyring on all OSD nodes
+  ansible.builtin.include_tasks: ceph_osd_setup_keyring.yml
+
+- name: Create OSDs
+  ansible.builtin.include_tasks: ceph_osd_create.yml
+
+- name: Verify OSDs are running
+  ansible.builtin.include_tasks: ceph_osd_verify.yml
+
+- name: Create OpenStack pools
+  ansible.builtin.include_tasks: ceph_osd_create_openstack_pools.yml
+  when: ceph_create_openstack_pools

@@ -1,0 +1,19 @@
+---
+
+- name: restart ceph services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - "ceph-mon@{{ inventory_hostname }}.service"
+    - "ceph-mgr@{{ inventory_hostname }}.service"
+  ignore_errors: true
+  listen: restart ceph services
+
+- name: restart osd services
+  ansible.builtin.shell:
+    cmd: |
+      if systemctl list-units --full -all "ceph-osd@*.service" --no-legend | grep -q "."; then
+        systemctl list-units --full -all "ceph-osd@*.service" --no-legend | awk '{print $1}' | xargs systemctl restart
+      fi
+  listen: restart ceph services

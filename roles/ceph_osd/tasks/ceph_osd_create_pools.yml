@@ -1,0 +1,5 @@
+---
+
+- name: Create OpenStack pools
+  ansible.builtin.include_tasks: ceph_osd_create_openstack_pools.yml
+  when: inventory_hostname == ansible_play_hosts_all[0]

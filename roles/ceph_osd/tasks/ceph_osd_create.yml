@@ -1,0 +1,74 @@
+---
+
+- name: Check if devices exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: device_stat
+  loop: "{{ ceph_osd_devices }}"
+
+- name: Fail if devices don't exist
+  ansible.builtin.fail:
+    msg: "Device {{ item.item }} does not exist on {{ inventory_hostname }}"
+  when: not item.stat.exists
+  loop: "{{ device_stat.results }}"
+
+- name: List existing OSDs for each device
+  ansible.builtin.command:
+    cmd: ceph-volume lvm list {{ item }}
+  register: existing_osds
+  failed_when: false
+  changed_when: false
+  loop: "{{ ceph_osd_devices }}"
+
+- name: Debug OSD check results
+  ansible.builtin.debug:
+    msg: "Device {{ item.item }} OSD status: {{ 'already has OSD - skipping creation' if item.stdout else 'no OSD found - will create' }}"
+  loop: "{{ existing_osds.results }}"
+
+- name: Show force zap status
+  ansible.builtin.debug:
+    msg: "Force zap is {{ 'ENABLED - will recreate existing OSDs' if ceph_osd_force_zap else 'DISABLED - will skip existing OSDs' }}"
+
+- name: Stop OSD services before zapping (only when force_zap and OSDs exist)
+  ansible.builtin.shell:
+    cmd: |
+      # Find OSD services for this device and stop them
+      OSD_ID=$(echo "{{ item.stdout }}" | grep -o 'osd id[[:space:]]*[0-9]\+' | awk '{print $3}')
+      if [ -n "$OSD_ID" ]; then
+        echo "Stopping OSD service: ceph-osd@${OSD_ID}"
+        systemctl stop ceph-osd@${OSD_ID}.service || true
+        # Remove OSD from cluster to avoid data loss warnings
+        ceph osd out ${OSD_ID} || true
+        ceph osd down ${OSD_ID} || true
+        ceph osd rm ${OSD_ID} || true
+        ceph auth del osd.${OSD_ID} || true
+      fi
+  when: 
+    - ceph_osd_force_zap
+    - item.stdout
+  loop: "{{ existing_osds.results }}"
+  register: osd_stop_result
+
+- name: Zap devices that need to be prepared (only when no OSD exists or force_zap after stopping)
+  ansible.builtin.command:
+    cmd: ceph-volume lvm zap {{ item.item }} --destroy
+  when: 
+    - not item.stdout or ceph_osd_force_zap
+  register: zap_result
+  failed_when: 
+    - zap_result.rc != 0
+    - "'No devices found' not in zap_result.stderr"
+    - "'No LVM setup was found' not in zap_result.stderr"
+  loop: "{{ existing_osds.results }}"
+
+- name: Create OSDs on devices that don't have them or were zapped
+  ansible.builtin.command:
+    cmd: ceph-volume lvm create --data {{ item.item }}
+  when: not item.stdout or ceph_osd_force_zap
+  register: osd_create_result
+  loop: "{{ existing_osds.results }}"
+
+- name: Wait for OSD services to start
+  ansible.builtin.pause:
+    seconds: "{{ ceph_osd_service_start_wait }}"
+  when: osd_create_result.changed

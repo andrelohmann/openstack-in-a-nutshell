@@ -1,0 +1,50 @@
+---
+
+- name: List locally created OSDs
+  ansible.builtin.command:
+    cmd: ceph-volume lvm list
+  register: local_osds
+  changed_when: false
+
+- name: Display local OSDs
+  ansible.builtin.debug:
+    msg: "{{ local_osds.stdout_lines }}"
+
+- name: Get local OSD services
+  ansible.builtin.command:
+    cmd: systemctl list-units --full -all "ceph-osd@*.service" --no-legend
+  register: osd_services
+  changed_when: false
+  failed_when: false
+
+- name: Check OSD service status
+  ansible.builtin.service:
+    name: "{{ item.split()[0] }}"
+    state: started
+    enabled: true
+  loop: "{{ osd_services.stdout_lines }}"
+  when: osd_services.stdout_lines | length > 0
+
+- name: Wait for OSDs to join cluster
+  ansible.builtin.pause:
+    seconds: 10
+  when: inventory_hostname == ansible_play_hosts_all[0]
+
+- name: Check cluster OSD status (from first host only)
+  ansible.builtin.command:
+    cmd: "{{ item }}"
+  register: cluster_status
+  changed_when: false
+  loop:
+    - ceph osd tree
+    - ceph osd stat
+    - ceph -s
+  when: inventory_hostname == ansible_play_hosts_all[0]
+
+- name: Display cluster OSD status
+  ansible.builtin.debug:
+    msg: "{{ item.stdout_lines }}"
+  loop: "{{ cluster_status.results }}"
+  when: 
+    - inventory_hostname == ansible_play_hosts_all[0]
+    - item.stdout_lines is defined
